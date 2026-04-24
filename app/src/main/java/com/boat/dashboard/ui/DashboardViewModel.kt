@@ -16,6 +16,7 @@ import com.seafox.nmea_dashboard.data.AutopilotDispatchRequest
 import com.seafox.nmea_dashboard.data.AutopilotGatewayBackend
 import com.seafox.nmea_dashboard.data.AutopilotSafetyGate
 import com.seafox.nmea_dashboard.data.BackupPrivacyMode
+import com.seafox.nmea_dashboard.data.EntitlementSnapshot
 import com.seafox.nmea_dashboard.data.NmeaNetworkService
 import com.seafox.nmea_dashboard.data.NmeaUpdate
 import com.seafox.nmea_dashboard.data.WidgetFrameStyle
@@ -34,6 +35,7 @@ import com.seafox.nmea_dashboard.data.toUdpJson
 import com.seafox.nmea_dashboard.data.BoatProfile
 import com.seafox.nmea_dashboard.data.NmeaPgnHistoryEntry
 import com.seafox.nmea_dashboard.data.Nmea0183HistoryEntry
+import com.seafox.nmea_dashboard.data.RuntimeEntitlementGate
 import com.seafox.nmea_dashboard.data.SupportDiagnosticsBuilder
 import com.seafox.nmea_dashboard.data.SupportDiagnosticsExporter
 import com.seafox.nmea_dashboard.data.SupportDiagnosticsShareContract
@@ -354,6 +356,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val widgetMinGridUnits = mutableMapOf<String, Pair<Int, Int>>()
     private var hasLoggedGpsSourceConflict = false
     private var layoutPersistJob: Job? = null
+    private var lastAddWidgetFailureMessage: String? = null
 
     init {
         network.setRouterHost(_state.value.nmeaRouterHost)
@@ -1348,6 +1351,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun updateBootAutostartEnabled(enabled: Boolean) {
         _state.update { current -> current.copy(bootAutostartEnabled = enabled) }
+        persist()
+    }
+
+    fun updateEntitlementSnapshot(snapshot: EntitlementSnapshot) {
+        _state.update { current -> current.copy(entitlementSnapshot = snapshot) }
         persist()
     }
 
@@ -2354,8 +2362,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun addWidget(kind: WidgetKind, pageWidthPx: Float, pageHeightPx: Float, gridStepPx: Float): Boolean {
+        lastAddWidgetFailureMessage = null
+        val entitlementDecision = RuntimeEntitlementGate.canAddWidget(
+            snapshot = _state.value.entitlementSnapshot,
+            kind = kind,
+        )
+        if (!entitlementDecision.allowed) {
+            lastAddWidgetFailureMessage = RuntimeEntitlementGate.denialMessage(
+                kind = kind,
+                decision = entitlementDecision,
+            )
+            return false
+        }
+
         val currentPage = _state.value.selectedPage
-        if (pageWidthPx <= 0f || pageHeightPx <= 0f || gridStepPx <= 0f) return false
+        if (pageWidthPx <= 0f || pageHeightPx <= 0f || gridStepPx <= 0f) {
+            lastAddWidgetFailureMessage = "Dashboard-Fläche ist noch nicht bereit. Bitte kurz warten und erneut versuchen."
+            return false
+        }
 
         val step = gridStepPx.coerceAtLeast(1f)
         val pageWidth = pageWidthPx.coerceAtLeast(1f)
@@ -2399,6 +2423,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
         if (added) persist()
         return added
+    }
+
+    fun consumeLastAddWidgetFailureMessage(): String? {
+        val message = lastAddWidgetFailureMessage
+        lastAddWidgetFailureMessage = null
+        return message
     }
 
     fun enforceMinimumWidgetSizesForPage(

@@ -575,6 +575,9 @@ class MainActivity : ComponentActivity() {
             val showWidgetAddError = { message: String ->
                 showUserWarning(message, "Warnung")
             }
+            val showWidgetAddFailure = { fallbackMessage: String ->
+                showWidgetAddError(viewModel.consumeLastAddWidgetFailureMessage() ?: fallbackMessage)
+            }
             val triggerAnchorWatchAlarmTest = {
                 runAlarmTestOnce {
                     applySystemAlarmPresetVolume(
@@ -851,12 +854,9 @@ class MainActivity : ComponentActivity() {
                                 pageHeightPx = dashboardPageHeightPx,
                                 gridStepPx = dashboardGridStepPx,
                             )
-                            if (!success) {
-                                showWidgetAddError("Nicht genug Platz für ein neues Widget.")
-                            }
                             success
                         },
-                        onAddWidgetError = showWidgetAddError,
+                        onAddWidgetError = showWidgetAddFailure,
                         onToggleBackground = viewModel::toggleBackgroundColor,
                         onToggleRouterSimulation = viewModel::toggleRouterSimulation,
                         onUpdateUiFont = viewModel::updateUiFont,
@@ -958,12 +958,9 @@ class MainActivity : ComponentActivity() {
                                         pageHeightPx = heightPx,
                                         gridStepPx = stepPx,
                                     )
-                                    if (!success) {
-                                        showWidgetAddError("Nicht genug Platz für ein neues Widget.")
-                                    }
                                     success
                                 },
-                                onAddWidgetError = showWidgetAddError,
+                                onAddWidgetError = showWidgetAddFailure,
                                 onPageMetrics = { widthPx, heightPx, stepPx ->
                                     dashboardPageWidthPx = widthPx
                                     dashboardPageHeightPx = heightPx

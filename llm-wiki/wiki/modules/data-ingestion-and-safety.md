@@ -39,7 +39,7 @@ sources:
 
 seaFOX sammelt Borddaten ueber Netzwerk, GPS, BLE und Simulation. Weil es ein Marine-Kontext ist, sind Safety-Gates, Datenschutz, Diagnose-Redaktion und ehrliche Produkt-/Billing-Aussagen Produktbestandteile, nicht nur technische Details.
 
-Stand 2026-04-24: Die Domainlogik fuer Autopilot Safety Gate, Backup Privacy, Boot-Autostart-Opt-in, Support Diagnostics, Entitlements, Feature Access, Billing-Restore-Mapping und lokale Crash-Reports ist sichtbar und getestet. Die groessten Product/Safety-Risiken liegen nicht in fehlender Syntax, sondern in Runtime-Truth: Boot-Autostart ist im Code gegen Boot, Unlock und internen Delayed Launch gehaertet, aber noch nicht auf Device/Emulator bewiesen; Entitlements sind noch nicht an Kauf-UI/Backend-Receipt-Validierung/UI-Laufzeitgates angeschlossen; Support Diagnostics bekommt einen user-facing Share-Flow-Vertrag ueber App-Cache, FileProvider und Android-Sharesheet nach Consent, aber noch keinen Device-QA-Nachweis.
+Stand 2026-04-24: Die Domainlogik fuer Autopilot Safety Gate, Backup Privacy, Boot-Autostart-Opt-in, Support Diagnostics, Entitlements, Feature Access, Billing-Restore-Mapping, Runtime-Widget-Gates und lokale Crash-Reports ist sichtbar und getestet. Die groessten Product/Safety-Risiken liegen nicht in fehlender Syntax, sondern in Runtime-Truth: Boot-Autostart ist im Code gegen Boot, Unlock und internen Delayed Launch gehaertet, aber noch nicht auf Device/Emulator bewiesen; Entitlements sind noch nicht an Kauf-UI/Backend-Receipt-Validierung und vollstaendige UI-Laufzeitgates angeschlossen; Support Diagnostics bekommt einen user-facing Share-Flow-Vertrag ueber App-Cache, FileProvider und Android-Sharesheet nach Consent, aber noch keinen Device-QA-Nachweis.
 
 Seit Chart Roadmap Task 03 unterscheidet `EntitlementSnapshot` auch eigene Kartenpakete (`ownedChartPackIds`) von externen Provider-Lizenzen (`licensedChartProviderIds`). Das erste first-party Pack ist `seafox-premium-de-coast` ueber Play-`INAPP` `seafox.chartpack.de_coast`.
 
@@ -84,7 +84,7 @@ Aus `README.md`:
 ## Current Release Risks
 
 - **Boot autostart is code-gated but needs device proof:** `BootCompletedReceiver` delegates Boot, Locked-Boot, User-Unlocked and the internal delayed action to `BootAutostartPolicy.decide`. Disabled or missing state returns `skipDisabled`; enabled Boot schedules a delayed launch; enabled Unlock/internal actions launch immediately. `BootAutostartPolicyTest` covers the bypass case that previously let Unlock/internal paths skip the opt-in. Remaining risk: no real Android boot/unlock/device QA has been run locally because `adb` is unavailable.
-- **Entitlements are not fully runtime-enforced:** `EntitlementPolicy` models `Free`, `Pro`, `Navigator` and `Fleet`, separates first-party chart packs from licensed chart providers, and blocks expired snapshots. `PlayBillingClientGateway` and `BillingEntitlementMapper` prepare restore/acknowledge plus verified entitlement mapping, but purchase UI, backend receipt validation, trial rules and UI/action enforcement remain open.
+- **Entitlements are partially runtime-enforced:** `EntitlementPolicy` models `Free`, `Pro`, `Navigator` and `Fleet`, separates first-party chart packs from licensed chart providers, and blocks expired snapshots. `RuntimeEntitlementGate` now blocks premium widget creation via `DashboardViewModel.addWidget`, but purchase UI, backend receipt validation, trial rules and broader UI/action enforcement remain open.
 - **Billing catalog now distinguishes app subscriptions, first-party chart packs and external placeholders:** `BillingCatalog` defines active app-subscription product ids for `Pro`, `Navigator` and `Fleet`, plus `seafox.chartpack.de_coast` as an active first-party Play-`INAPP` that grants only `ownedChartPackIds`. Chart-license products for C-Map and S-63 are inactive external placeholders and do not grant app tiers, first-party packs or chart provider licenses.
 - **Support diagnostics share flow is user-facing but not device-proven:** `SupportDiagnosticsBuilder`, `SupportDiagnosticsJson.toMap`, `toJsonString` and `SupportDiagnosticsExporter.writeReport` exist and are covered by JVM tests. The documented support flow is explicit user action -> consent dialog -> redacted JSON in app cache -> FileProvider `content://` URI -> Android Sharesheet. Public/default shares must redact Router-Host, MMSI, Route and MOB data. There is no automatic upload and no backend triage in the current product contract. Remaining risk: no emulator/device proof for consent copy, FileProvider URI grants, sharesheet behavior or cache/public-file boundaries.
 - **Device proof is missing:** The product check passed in the CEO sync, but `adb` was unavailable. Boot autostart, emulator flows, device GPS/BLE and hardware-near autopilot behavior remain unverified locally.
@@ -92,6 +92,7 @@ Aus `README.md`:
 ## Entitlement and Billing Truth
 
 - `EntitlementSnapshot` contains an app tier, optional owned first-party chart pack ids, optional licensed chart provider ids and optional expiry.
+- `DashboardState` persists the current `EntitlementSnapshot`; `DashboardViewModel.updateEntitlementSnapshot` is the local bridge future Billing Restore code can call.
 - Free keeps simulator, basic dashboard, online charts and MOB available.
 - Pro adds offline packages, full widget configuration, routes/tracks, AIS CPA, anchor watch, laylines and trend curves.
 - Navigator adds safety contour, advanced alarms, import/export and support diagnostics.
@@ -108,7 +109,8 @@ Aus `README.md`:
 - `BillingEntitlementMapper` grants tiers only from verified `purchased` records; pending, unverified and rejected purchases do not grant access.
 - `BillingEntitlementMapper` grants first-party chart-pack ownership only from verified `purchased` records; pending, unverified and rejected pack purchases do not grant ownership.
 - Unacknowledged verified purchase tokens are surfaced for acknowledge handling.
-- There is still no real HTTP receipt validator, Play Console setup, purchase UI, trial model, runtime UI gate, entitlement persistence or premium-pack delivery backend.
+- There is still no real HTTP receipt validator, Play Console setup, purchase UI, trial model, full runtime UI/action gate coverage or premium-pack delivery backend.
+- Runtime widget adds now call `RuntimeEntitlementGate`; denied widgets produce a user-facing message naming the required tier and stating that chart packages/licenses do not unlock app features.
 
 ## Support Diagnostics Truth
 

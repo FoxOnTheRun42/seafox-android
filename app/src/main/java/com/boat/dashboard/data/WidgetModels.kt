@@ -108,6 +108,7 @@ data class DashboardState(
     val backupPrivacyMode: BackupPrivacyMode = BackupPrivacyMode.privateOnly,
     val bootAutostartEnabled: Boolean = false,
     val onboardingCompleted: Boolean = false,
+    val entitlementSnapshot: EntitlementSnapshot = EntitlementSnapshot(),
 )
 
 data class SerializedWaypoint(

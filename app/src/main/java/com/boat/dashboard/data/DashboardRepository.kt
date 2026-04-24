@@ -289,6 +289,7 @@ class DashboardRepository(private val context: Context) {
         root.put("backupPrivacyMode", state.backupPrivacyMode.name)
         root.put("bootAutostartEnabled", state.bootAutostartEnabled)
         root.put("onboardingCompleted", state.onboardingCompleted)
+        root.put("entitlementSnapshot", serializeEntitlementSnapshot(state.entitlementSnapshot))
         root.put("boatProfile", JSONObject().apply {
             put("lengthMeters", state.boatProfile.lengthMeters)
             put("widthMeters", state.boatProfile.widthMeters)
@@ -402,6 +403,7 @@ class DashboardRepository(private val context: Context) {
             }.getOrDefault(BackupPrivacyMode.privateOnly)
             val bootAutostartEnabled = root.optBoolean("bootAutostartEnabled", false)
             val onboardingCompleted = root.optBoolean("onboardingCompleted", false)
+            val entitlementSnapshot = parseEntitlementSnapshot(root.optJSONObject("entitlementSnapshot"))
             val detectedNmeaSources = parseNmeaSourceProfiles(root.optJSONArray(KEY_DETECTED_NMEA_SOURCES))
             val nmea0183SentenceCategoryOverrides = parseStringMap(
                 root.optJSONObject(KEY_NMEA0183_SENTENCE_CATEGORY_OVERRIDES)
@@ -533,6 +535,7 @@ class DashboardRepository(private val context: Context) {
                 backupPrivacyMode = backupPrivacyMode,
                 bootAutostartEnabled = bootAutostartEnabled,
                 onboardingCompleted = onboardingCompleted,
+                entitlementSnapshot = entitlementSnapshot,
                 boatProfile = boatProfile,
                 detectedNmeaSources = detectedNmeaSources,
                 nmea0183SentenceCategoryOverrides = nmea0183SentenceCategoryOverrides,
@@ -581,6 +584,66 @@ class DashboardRepository(private val context: Context) {
             }
         }
         return values
+    }
+
+    private fun serializeEntitlementSnapshot(snapshot: EntitlementSnapshot): JSONObject {
+        return JSONObject().apply {
+            put("tier", snapshot.tier.name)
+            put(
+                "ownedChartPackIds",
+                JSONArray().apply {
+                    snapshot.ownedChartPackIds
+                        .filter { value -> value.isNotBlank() }
+                        .sorted()
+                        .forEach { value -> put(value) }
+                },
+            )
+            put(
+                "licensedChartProviderIds",
+                JSONArray().apply {
+                    snapshot.licensedChartProviderIds
+                        .filter { value -> value.isNotBlank() }
+                        .sorted()
+                        .forEach { value -> put(value) }
+                },
+            )
+            snapshot.validUntilEpochMs?.let { validUntilEpochMs ->
+                put("validUntilEpochMs", validUntilEpochMs.coerceAtLeast(0L))
+            }
+        }
+    }
+
+    private fun parseEntitlementSnapshot(raw: JSONObject?): EntitlementSnapshot {
+        if (raw == null) return EntitlementSnapshot()
+        val tier = runCatching {
+            SubscriptionTier.valueOf(
+                raw.optString("tier", SubscriptionTier.FREE.name)
+                    .trim()
+                    .uppercase(Locale.ROOT)
+            )
+        }.getOrDefault(SubscriptionTier.FREE)
+
+        return EntitlementSnapshot(
+            tier = tier,
+            ownedChartPackIds = parseStringSet(raw.optJSONArray("ownedChartPackIds")),
+            licensedChartProviderIds = parseStringSet(raw.optJSONArray("licensedChartProviderIds")),
+            validUntilEpochMs = raw.optLongOrNull("validUntilEpochMs"),
+        )
+    }
+
+    private fun parseStringSet(jsonArray: JSONArray?): Set<String> {
+        if (jsonArray == null || jsonArray.length() == 0) return emptySet()
+        val values = linkedSetOf<String>()
+        for (index in 0 until jsonArray.length()) {
+            val value = jsonArray.optString(index).trim()
+            if (value.isNotBlank()) values += value
+        }
+        return values
+    }
+
+    private fun JSONObject.optLongOrNull(key: String): Long? {
+        if (!has(key) || isNull(key)) return null
+        return optLong(key).coerceAtLeast(0L)
     }
 
     private fun serializeRoute(route: SerializedRoute): JSONObject {
