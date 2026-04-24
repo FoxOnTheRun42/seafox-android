@@ -64,6 +64,7 @@ object NauticalOverlay {
      * Find and load all .000 ENC files from the chart source path.
      * Runs conversion on IO thread, then applies layers on main thread.
      */
+    @Suppress("UNUSED_PARAMETER")
     suspend fun loadFromPath(
         context: Context,
         style: Style,
@@ -140,8 +141,6 @@ object NauticalOverlay {
         remove(style)
 
         style.addSource(GeoJsonSource(SOURCE_ID, geoJson))
-
-        val objCode = Expression.get("objCode")
 
         // Land areas (LNDARE)
         style.addLayer(
@@ -360,49 +359,17 @@ object NauticalOverlay {
     ): List<File> {
         val source = File(sourcePath)
         Log.d(TAG, "findEncFiles: path=$sourcePath exists=${source.exists()} isFile=${source.isFile} isDir=${source.isDirectory}")
-        if (source.isFile && source.extension == "000") {
-            Log.d(TAG, "findEncFiles: single .000 file, size=${source.length()}")
-            return listOf(source)
+        val files = S57CellSelector.findEncFiles(
+            sourcePath = sourcePath,
+            cameraBounds = cameraBounds,
+            zoomLevel = zoomLevel,
+            limit = 20,
+        )
+        if (files.isEmpty()) {
+            Log.w(TAG, "findEncFiles: no files found for $sourcePath")
+        } else {
+            Log.d(TAG, "findEncFiles: selected ${files.size} .000 files")
         }
-        val sourceRoot = when {
-            source.isDirectory -> source
-            source.parentFile?.isDirectory == true -> source.parentFile
-            else -> null
-        }
-        val catalogFile = sourceRoot
-            ?.walkTopDown()
-            ?.maxDepth(3)
-            ?.firstOrNull { it.isFile && it.name.equals("CATALOG.031", ignoreCase = true) }
-        if (catalogFile != null && cameraBounds != null) {
-            val preferredFiles = Catalog031Parser.parse(catalogFile)
-                .preferredRelativePaths(bounds = cameraBounds, zoom = zoomLevel, limit = 20)
-                .map { relativePath -> File(catalogFile.parentFile, relativePath) }
-                .filter { it.isFile && it.extension.equals("000", ignoreCase = true) }
-            if (preferredFiles.isNotEmpty()) {
-                Log.d(TAG, "findEncFiles: catalog selected ${preferredFiles.size} preferred .000 files")
-                return preferredFiles
-            }
-        }
-        if (source.isDirectory) {
-            val files = source.walkTopDown()
-                .maxDepth(4)
-                .filter { it.isFile && it.extension == "000" }
-                .take(20) // Limit to 20 files to avoid OOM on 6813 files
-                .toList()
-            Log.d(TAG, "findEncFiles: directory walk found ${files.size} .000 files")
-            return files
-        }
-        val parent = source.parentFile
-        if (parent?.isDirectory == true) {
-            val files = parent.walkTopDown()
-                .maxDepth(4)
-                .filter { it.isFile && it.extension == "000" }
-                .take(20)
-                .toList()
-            Log.d(TAG, "findEncFiles: parent walk found ${files.size} .000 files")
-            return files
-        }
-        Log.w(TAG, "findEncFiles: no files found for $sourcePath")
-        return emptyList()
+        return files
     }
 }

@@ -4,6 +4,7 @@ import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.Locale
 
 /**
  * Converts S-57 ENC datasets to GeoJSON for MapLibre rendering.
@@ -170,7 +171,7 @@ object S57ToGeoJson {
                 val depthStr = if (depth == Math.floor(depth)) {
                     depth.toInt().toString()
                 } else {
-                    "%.1f".format(depth)
+                    "%.1f".format(Locale.ROOT, depth)
                 }
                 put("depthLabel", depthStr)
             }

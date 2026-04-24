@@ -26,6 +26,7 @@ seaFOX ist ein fortgeschrittener Alpha-Prototyp mit ernstzunehmendem Kern:
 - Freie Online-Provider sind als erster Chart-Roadmap-Schritt angebunden: QMAP DE als Raster-Beta fuer deutsche Gewaesser, OpenSeaMap als Seamark-Overlay und OSM nur als interner Online-Fallback ohne Seekartenversprechen.
 - Lokales Sideloading ist fuer Kartenpakete angebunden: Raster-MBTiles koennen ueber Android-Dateiauswahl importiert und offline gerendert werden; Vector-MBTiles und GeoPackage werden validiert/gespeichert, aber ehrlich als noch nicht renderbar markiert.
 - Erststart-Onboarding, Fullscreen-Chart und Datenschutz-/Bootmodus-Einstellungen sind als Produkt-Shell vorhanden.
+- Ein S-57/ENC-Renderer-Skeleton beschreibt jetzt Format-Capabilities, Layer-Rollen, SCAMIN-/Zoom-Planung und oeSENC-Grenzen. Das ist ein testbarer Beta-Vertrag, keine S-52-/ECDIS-Zertifizierung.
 - Entitlement-Domainlogik trennt App-Stufen von Kartenlizenzen, bevor Play Billing angeschlossen wird.
 - Billing-Katalog fuer `Pro`, `Navigator` und `Fleet` ist vorbereitet; C-Map/S-63 sind inaktive externe Platzhalter ohne Rechtefreischaltung.
 - Ein erstes eigenes seaFOX Premium-Kartenpaket (`seafox.chartpack.de_coast`) ist als aktives Play-`INAPP`-Produkt modelliert. Es erzeugt nur `ownedChartPackIds`, keine App-Stufe und keine externen Kartenprovider-Lizenzen.
@@ -48,7 +49,7 @@ Noch nicht produktreif:
 - Reproduzierbarkeit: Vor dieser Pipeline gab es keinen `gradlew`; Builds waren von globalem Gradle und lokaler Java-Version abhaengig.
 - QA: Es gab keine JVM-, UI- oder Instrumentation-Tests. Ein einzelner Compile-Erfolg reicht fuer ein Marine-Produkt nicht.
 - Kartenrecht: S-63, C-Map und kommerzielle ENC-Quellen sind keine reine Technikfrage. Es braucht Lizenzvertrag, Entitlement, Zertifikats-/Permit-Handling und klare Nutzungsbedingungen.
-- Kartendarstellung: S-57 Rendering ist nicht S-52/ECDIS-konform. Es darf nicht als amtliche Navigation beworben werden.
+- Kartendarstellung: S-57 Rendering ist nicht S-52/ECDIS-konform. S-52-nahe Arbeit bleibt ein nicht-zertifiziertes Styling-/Renderer-Experiment und darf nicht als amtliche Navigation beworben werden.
 - Safety Contour: Safety-Depth-Berechnung und DEPARE/DEPCNT/SOUNDG-Filter sind vorhanden und mit Fixtures getestet. Es fehlen noch ein vollstaendiger gerenderter Contour-/Warnpfad aus realen ENC-Zellen und Fixture-Screenshots.
 - UI/UX: Onboarding und Fullscreen-Chart sind vorhanden, aber viele Funktionen liegen weiter in dichten Popups. Fuer Cockpit-Bedienung fehlen noch konsequent grosse Touch-Ziele, klare Statusleisten und validierte Tablet-/Phone-Flows.
 - Release: Release-BuildType, R8/ProGuard-Regeln und optionale Env-Signing-Konfiguration sind vorhanden. Es fehlen Play-Store-Prozess, echte Keystore-Verwaltung, signierter CI-Build, Rollback-Plan und Beta-/Crash-Schiene.
@@ -73,12 +74,12 @@ Noch nicht produktreif:
 Damit wirklich alle Seekarten und die Kurven sauber angezeigt werden koennen, fehlen diese Bausteine:
 
 - S-57/S-101 Datenmodell: Vollstaendigere Objektklassifikation, Attribute, Soundings, Depth Areas, Depth Contours, Lights, Buoys, Beacons, Restricted Areas und SCAMIN je Zoom.
-- S-52-nahe Styling-Schicht: Symbolisierung, Farbschema fuer Tag/Nacht, Prioritaeten, Textlabel-Regeln und sicherheitsrelevante Overlays.
+- S-52-inspirierte, nicht zertifizierte Styling-Schicht: Symbolisierung, Farbschema fuer Tag/Nacht, Prioritaeten, Textlabel-Regeln und sicherheitsrelevante Overlays.
 - Multi-Scale Selection: CATALOG.031/coverage-basiertes Nachladen, Zellpriorisierung nach Position/Zoom und saubere Cache-Invalidierung.
 - Tiefenlogik: Ableitung von Safety Depth, Shallow/Deep Contour, Tiefenflaechenfarben und Alarmzonen aus realen ENC-Objekten.
 - Kurven-Renderer: Linienvereinfachung, Segmentierung, Antimeridian-Handling, Label-Platzierung und Performance-Budget fuer Track, Route, Laylines und Konturlinien.
 - Offline Provider: Raster-MBTiles-Sideloading ist angebunden; Vector-MBTiles, GeoPackage-Rendering, Tile-Directories und GeoJSON muessen noch dieselbe Provider-Abstraktion verwenden.
-- Lizenzmodule: S-63/C-Map duerfen erst als bezahltes Produkt erscheinen, wenn Entitlement, Verschluesselung, Zertifikate und Vertragslage geklaert sind.
+- Lizenzmodule: S-63/C-Map/oeSENC duerfen erst als bezahltes Produkt erscheinen, wenn Entitlement, Verschluesselung, Zertifikate/Permits, Vendor-Pfad und Vertragslage geklaert sind.
 - Free Provider: QMAP DE und OpenSeaMap/OSM sind online angebunden, aber nicht offline-fest, nicht amtlich und nicht fuer Navigation. OSM darf nicht per Bulk-Prefetch oder als kommerzielles Seekartenpaket behandelt werden.
 
 ## Monetarisierungsmodell

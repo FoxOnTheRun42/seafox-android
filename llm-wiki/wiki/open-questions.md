@@ -37,7 +37,7 @@ sources:
 - Welche Kartenquelle wird nach Task 03 als naechster Offline-Schritt priorisiert? Aktuelle Entscheidung: Raster-MBTiles-Sideloading ist angebunden; das erste first-party Premium-Pack ist als Billing-/Statusvertrag modelliert; GeoPackage/Vector-MBTiles sind importierbar, aber noch nicht renderbar.
 - Wird GeoPackage zuerst ueber lokalen Tile-Adapter gerendert, beim Import nach MBTiles konvertiert oder bis zur konkreten Provider-Registry verschoben?
 - Welche kleine, rechtlich saubere Raster-MBTiles-Fixture darf fuer Emulator-/Screenshot-Tests im Repo liegen?
-- Wie stark soll S-52-nahe Symbolisierung vor der ersten Beta sein?
+- Wie stark soll S-52-inspirierte, nicht zertifizierte Symbolisierung vor der ersten Beta sein?
 - Welche reale ENC-Zelle dient als Safety-Contour-Referenz?
 - Wann wird die bestehende ChartProvider-Abstraktion voll genutzt statt direkter Verdrahtung?
 - Wird Safety Contour zuerst als DEPCNT-Linie, shallow DEPARE-Fill, Alarmzone oder separate Warnschicht umgesetzt?
@@ -56,5 +56,6 @@ sources:
 - Welche App-Features werden verkauft, ohne Kartenanbieter-Lizenzen zu beruehren?
 - Welche first-party Premium-Kartenpakete duerfen rechtlich verkauft und ausgeliefert werden, und wie werden ihre MBTiles/Assets signiert, versioniert und aktualisiert?
 - Welche Provider-IDs gelten als getrennt lizenzierte Module?
-- Gibt es eine klare Strategie fuer S-63, C-MAP oder Navionics, bevor sie in UI/Marketing auftauchen?
+- Gibt es eine klare Strategie fuer S-63, C-MAP, oeSENC oder Navionics, bevor sie in UI/Marketing auftauchen?
+- Braucht oeSENC einen Vendor-SDK-/Permit-/Plugin-Pfad, oder bleibt es bis zu einem unterschriebenen Partnervertrag komplett ausserhalb von seaFOX?
 - Wie bleiben inaktive C-MAP/S-63-Billing-Platzhalter unsichtbar, bis Vertrage, Zertifikate, Permit-Handling und Entitlements stehen?

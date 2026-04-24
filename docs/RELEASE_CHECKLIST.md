@@ -33,7 +33,7 @@ Wichtig: `assemble`, `bundle`, `install` und `package` erhoehen die Buildnummer 
 ## 3. Store-Wahrheit
 
 - seaFOX als Marine-Assistent/Dashboard beschreiben, nicht als zertifiziertes ECDIS.
-- S-63/C-Map nicht als kaufbar oder aktiv bewerben, solange Vertrage, Zertifikate, Permit-Handling und Entitlements fehlen.
+- S-63/C-Map/oeSENC nicht als kaufbar oder aktiv bewerben, solange Vertrage, Zertifikate, Permit-Handling, Vendor-Pfad und Entitlements fehlen.
 - Eigenes seaFOX Premium-Kartenpaket nur als first-party Offline-Pack bewerben, wenn Play-Console-`INAPP`, Backend-Verifikation, Auslieferung/Download und lokale Paketvalidierung fuer den Kandidaten nachgewiesen sind.
 - DALY-BMS als Beta kennzeichnen, bis BLE-Device-QA abgeschlossen ist.
 - Safety Contour nur als Assistenzfunktion bewerben, bis echte ENC-Fixtures und Device-Screenshots vorliegen.

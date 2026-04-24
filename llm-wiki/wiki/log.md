@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Chart Roadmap Task 04 renderer skeleton
+
+- Sources: `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/enc/EncRendererSkeleton.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/S57CellSelector.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/s57/S57ChartProvider.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/s57/S57ToGeoJson.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/enc/EncRendererSkeletonTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/S57CellSelectorTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/s57/S57ToGeoJsonTest.kt`
+- Updated: `wiki/modules/chart-system.md`, `wiki/modules/production-and-qa.md`, `wiki/open-questions.md`, `wiki/log.md`
+- Notes: Task 04 als sicheres Skeleton begonnen: Plain S-57 bleibt Beta/non-ECDIS, oeSENC bleibt explizit `notImplemented`, S-57-Zellenauswahl ist wiederverwendbar, und ein duenner `S57ChartProvider` kann spaeter in die Provider-Registry/Runtime migriert werden. Gezielte JVM-Tests fuer Renderer-Capability, Layer-Rollen, SCAMIN, SOUNDG, oeSENC-Rejection und Provider-Notices sind gruen. Kein echter S-52-/oeSENC-Renderer, kein Device-Screenshot und keine Safety-Contour-Releasefreigabe.
+
 ## [2026-04-24] implementation | Chart Roadmap Task 03 premium pack start
 
 - Sources: `../app/src/main/java/com/boat/dashboard/data/BillingCatalog.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingEntitlementMapper.kt`, `../app/src/main/java/com/boat/dashboard/data/EntitlementModels.kt`, `../app/src/main/java/com/boat/dashboard/data/PlayBillingClientGateway.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FirstPartyChartPackages.kt`, `../docs/BILLING_BACKEND_CONTRACT.md`

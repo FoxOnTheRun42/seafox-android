@@ -32,6 +32,9 @@ sources:
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/HazardOverlayBuilderTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/FreeRasterChartProvidersTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/SeaChartSideLoadPackagesTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/S57CellSelectorTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/s57/S57ToGeoJsonTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/enc/EncRendererSkeletonTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/SeaChartWidgetSettingsModuleTest.kt
 ---
 
@@ -54,6 +57,7 @@ Quelle: `runs/20260424-095641-ceo-sync/brief.md`, danach im Wiki-Refresh erneut 
 - `adb` ist lokal nicht installiert. Deshalb wurde keine Emulator- oder Device-QA ausgefuehrt; `--device` waere in dieser Umgebung blockiert.
 - Nach der Produktionshaertung wurde `./scripts/seafox-product-check.sh --ci --release-r8` lokal ausgefuehrt und bestand Compile, JVM-Tests, Lint und `:app:minifyReleaseWithR8`. Ein signiertes Store-Artefakt wurde dadurch nicht erzeugt.
 - Nach Chart Roadmap Task 03 wurde ein gezielter JVM-Check fuer Billing-Katalog, Billing-Restore-Mapping, Entitlement-Policy und First-Party-Chart-Pack-Status gruen ausgefuehrt.
+- Nach dem ersten Chart Roadmap Task 04-Schnitt wurde ein gezielter JVM-Check fuer ENC-Renderer-Skeleton, S-57-Zellenauswahl, SOUNDG/SCAMIN-GeoJSON, oeSENC-Rejection und Provider-Notices gruen ausgefuehrt.
 - Nach Chart Roadmap Task 01 wurde der gezielte JVM-Provider-Check gruen ausgefuehrt: `./gradlew :app:testDebugUnitTest --tests '*ChartProviderRegistryTest' --tests '*FreeRasterChartProvidersTest' --tests '*SeaChartWidgetSettingsModuleTest'`.
 - Nach Chart Roadmap Task 01 wurde auch das volle lokale Product Gate mit Release-R8 gruen ausgefuehrt: `./scripts/seafox-product-check.sh --ci --release-r8`. `adb` fehlt weiterhin, deshalb wurde keine Emulator-/Device-QA ausgefuehrt.
 - Nach dem ersten Task-02-Schnitt wurde gezielt `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --tests '*SeaChartSideLoadPackagesTest'` gruen ausgefuehrt. Das beweist Dateivertraege und Compile, aber noch keinen echten Android-Dateiauswahl- oder Render-Screenshot.
@@ -93,6 +97,9 @@ Vorhanden in `app/src/test` am 2026-04-24:
 - `ChartProviderRegistryTest`: NOAA/QMAP DE/S-57/OpenSeaCharts als selektierbar oder beta, C-MAP lizenzpflichtig, S-63 nicht implementiert.
 - `FreeRasterChartProvidersTest`: QMAP-DE-Tilevertrag, OpenSeaCharts mit OSM-Fallback plus erzwungenem Seamark-Overlay und kein Free-Raster-Override fuer NOAA.
 - `SeaChartSideLoadPackagesTest`: erlaubte MBTiles/GeoPackage-Dateiendungen sowie stabile Sideload-Datei- und Ordnernamen.
+- `S57CellSelectorTest`: plain `.000`-Zellenauswahl, Kappung grosser ENC-Verzeichnisse und keine implizite oeSENC/oeSU-Unterstuetzung.
+- `S57ToGeoJsonTest`: SOUNDG-Tiefenlabels mit stabiler Punkt-Decimal-Formatierung, SCAMIN-/Zoomfilter und Skip fuer Metadata/Unknown-Objekte.
+- `EncRendererSkeletonTest`: plain S-57 als Beta/non-ECDIS, oeSENC als nicht implementiert, Layer-Rollen und Safety-Relevanzplanung fuer DEPARE/DEPCNT/SOUNDG.
 - `FirstPartyChartPackagesTest`: `seafox-premium-de-coast` ist ohne Entitlement lizenzpflichtig, mit Entitlement lizenziert aber ohne lokale Datei unvollstaendig, mit lokaler Datei ein valider Raster-MBTiles-Kandidat und bei Ablauf expired.
 - `SeaChartWidgetSettingsModuleTest`: persistierte Provider-Normalisierung inklusive legacy QMAP, OSM und JSON-Parsing mit echter JVM-JSON-Bibliothek.
 - `SafetyContourPolicyTest`: Safety-Depth-Berechnung und Filterung von DEPARE, DEPCNT und SOUNDG.

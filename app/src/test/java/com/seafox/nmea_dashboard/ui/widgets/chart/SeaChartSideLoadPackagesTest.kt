@@ -16,6 +16,8 @@ class SeaChartSideLoadPackagesTest {
         assertFalse(SeaChartSideLoadPackages.isAcceptedFileName("route.gpx"))
         assertFalse(SeaChartSideLoadPackages.isAcceptedFileName("archive.zip"))
         assertFalse(SeaChartSideLoadPackages.isAcceptedFileName("soundings.000"))
+        assertFalse(SeaChartSideLoadPackages.isAcceptedFileName("encrypted.oesenc"))
+        assertFalse(SeaChartSideLoadPackages.isAcceptedFileName("permit.oesu"))
     }
 
     @Test

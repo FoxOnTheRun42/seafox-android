@@ -10,7 +10,7 @@ seaFOX ist ein Marine-Assistent fuer Dashboard, Sensoranzeige, Kartenansicht und
 - GPS, AIS, NMEA, BLE, Netzwerkdaten und Kartendaten koennen ausfallen oder falsche Werte liefern.
 - Safety Contour, CPA/TCPA, MOB, Routen, Laylines, Alarme und Tiefenwarnungen sind Assistenzfunktionen und muessen vom Skipper geprueft werden.
 - Autopilot-Kommandos duerfen nur mit bewusst aktiviertem Safety Gate, verifiziertem Zielsystem und unmittelbarer Kontrolle genutzt werden.
-- Premiumkarten wie C-Map/S-63 duerfen erst genutzt oder verkauft werden, wenn Lizenz, Zertifikate, Entitlements und Nutzungsbedingungen geklaert sind.
+- Premiumkarten wie C-Map/S-63/oeSENC duerfen erst genutzt oder verkauft werden, wenn Lizenz, Zertifikate/Permits, Entitlements, Vendor-Pfad und Nutzungsbedingungen geklaert sind.
 
 ## Kurztext fuer Onboarding
 

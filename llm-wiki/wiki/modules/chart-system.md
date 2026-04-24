@@ -12,10 +12,13 @@ sources:
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/NavHazardOverlayBuilder.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/HazardOverlayBuilder.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/SafetyContourPolicy.kt
+  - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/S57CellSelector.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartProviderRegistry.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FreeRasterChartProviders.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/SeaChartSideLoadPackages.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FirstPartyChartPackages.kt
+  - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/enc/EncRendererSkeleton.kt
+  - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/s57/S57ChartProvider.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/OpenSeaMapOverlay.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/RouteOverlayBuilder.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/NauticalOverlay.kt
@@ -36,6 +39,8 @@ Chart Roadmap Task 02 ist teilweise produktiv umgesetzt: Raster-MBTiles koennen 
 
 Chart Roadmap Task 03 ist als Domain-/Restore-Grundlage gestartet: Ein eigenes seaFOX Premium-Pack `seafox-premium-de-coast` wird ueber das Play-`INAPP`-Produkt `seafox.chartpack.de_coast` modelliert. Verifizierte Kaeufe setzen `ownedChartPackIds`; ohne lokale Paketdatei bleibt der Offline-Paketstatus bewusst `incomplete`. C-Map und S-63 bleiben davon getrennte externe Platzhalter.
 
+Chart Roadmap Task 04 ist als Renderer-Skeleton gestartet: `EncRendererSkeleton` beschreibt Format-Capabilities, S-57-Layer-Rollen, SCAMIN-/Zoom-Planung und Safety-Relevanz, waehrend oeSENC explizit `notImplemented` bleibt. `S57CellSelector` kapselt die `.000`-Zellauswahl und ignoriert oeSENC-Artefakte; `S57ChartProvider` ist ein duenner `ChartProvider`-Adapter um den vorhandenen S-57-zu-GeoJSON-Pfad. Das ist ein Beta-/Integrationsvertrag, kein S-52/ECDIS-Renderer.
+
 Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour ist aktuell ein Contract-/Placeholder-Pfad plus Depth-Filter-Policy, keine bewiesene echte ENC-Contour-Visualisierung aus realen DEPARE/DEPCNT/SOUNDG-Zellen.
 
 ## Key Files
@@ -49,10 +54,12 @@ Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour 
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/NavHazardOverlayBuilder.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/HazardOverlayBuilder.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/SafetyContourPolicy.kt`
+- `app/src/main/java/com/boat/dashboard/ui/widgets/chart/S57CellSelector.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/OpenSeaMapOverlay.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/FreeRasterChartProviders.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/SeaChartSideLoadPackages.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/FirstPartyChartPackages.kt`
+- `app/src/main/java/com/boat/dashboard/ui/widgets/chart/enc/EncRendererSkeleton.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartProvider.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartProviderRegistry.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/OfflineTileManager.kt`
@@ -62,6 +69,9 @@ Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour 
 
 - `ChartWidget` owns the MapLibre `MapView`, day/night style switching, fullscreen dialog, follow-position toggle, MOB button, viewport callbacks and overlay re-application after style changes.
 - `NauticalOverlay` scans `.000` ENC files, optionally uses `CATALOG.031` and camera/zoom bounds to prefer cells, converts selected S-57 files through `S57ToGeoJson`, and applies MapLibre layers for land, depth areas, depth contours, buoys, beacons, lights, obstructions, soundings, restricted areas and infrastructure.
+- `S57CellSelector` owns the reusable plain-S-57 cell discovery contract: single `.000`, directory walk capped to 20 cells, optional `CATALOG.031` preference, and no `.oesenc`/`.oesu` support.
+- `EncRendererSkeleton` classifies plain S-57 as beta/non-certified and oeSENC as not implemented; it maps object codes to layer roles and flags DEPARE/DEPCNT/SOUNDG/dangers as safety-relevant planning inputs.
+- `S57ChartProvider` is a thin `ChartProvider` skeleton for plain S-57 that returns GeoJSON and reuses `NauticalOverlay` styling. Runtime `ChartWidget` still calls `NauticalOverlay` directly.
 - `FreeRasterChartProviders` bridges the first free online raster providers into the MapLibre runtime: QMAP DE uses `https://freenauticalchart.net/qmap-de/{z}/{x}/{y}.png`; `OPEN_SEA_CHARTS` gets an OSM standard raster fallback plus forced seamark overlay; NOAA/S-57/S-63/C-Map do not get this raster override.
 - `SeaChartSideLoadPackages` validates local `.mbtiles`, `.gpkg` and `.geopackage` files. Raster-MBTiles are renderable now; Vector-MBTiles and GeoPackage are accepted as imported packages but not rendered yet.
 - `FirstPartyChartPackages` describes the first seaFOX-owned premium pack as a raster-MBTiles offline package. Entitlement changes only its license status; actual render readiness still requires a local package path.
@@ -82,7 +92,8 @@ Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour 
 - OpenSeaMap: seamark raster overlay is wired and selectable, but it is an online tile overlay, not a licensed offline ENC provider or official navigation source.
 - QMAP DE/OSM: QMAP DE is online raster only in Task 01; OSM is an internal orientation fallback, not a user-facing sea-chart provider, offline package or bulk-prefetch source.
 - Route/MOB/Laylines: builders and main chart wiring exist. Release confidence still requires user-flow proof for route creation/selection, MOB trigger/clear behavior on device, and laylines with a reliable true-wind source.
-- S-57/S-52: S-57 parsing/rendering exists, but styling is not S-52/ECDIS compliant. Product copy must avoid official-navigation claims.
+- S-57/S-52: S-57 parsing/rendering and a renderer skeleton exist, but styling is not S-52/ECDIS compliant. Product copy must avoid official-navigation claims.
+- oeSENC: explicitly not implemented. There is no decryption, permit handling, vendor SDK, entitlement or UI path for encrypted oeSENC/S-63-like packages.
 - Offline/format breadth: Raster-MBTiles sideloading exists. Vector MBTiles/PBF, GeoPackage rendering, tile-directory rendering, PMTiles, WMS/WMTS, BSB/KAP, GPX/KML, S-63 and C-Map are not production-ready provider implementations.
 - Premium pack runtime: Billing/entitlement/package-status contracts exist for the first first-party pack, but Play Console setup, purchase UI, backend receipt validation, secure package delivery and UI wiring are still missing.
 
@@ -92,7 +103,7 @@ Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour 
 - Checked `../docs/PRODUCTION_READINESS.md`: release gate explicitly says S-57 is not S-52/ECDIS conformant and Safety Contour lacks a full rendered path from real ENC cells plus fixture screenshots.
 - Checked `../runs/20260424-095641-ceo-sync/brief.md`: current lane handoff says Safety Contour is placeholder/contract unless connected to real ENC/GeoJSON rendering, and ChartProvider is not yet the real runtime path.
 - Checked chart code under `../app/src/main/java/com/boat/dashboard/ui/widgets/chart`: route/MOB/layline/hazard builders exist; Safety Contour contract emits a placeholder feature; OpenSeaMap emits a raster tile layer; provider interfaces/registry exist.
-- Checked unit-test surface: `ChartProviderRegistryTest`, `FreeRasterChartProvidersTest`, `SeaChartSideLoadPackagesTest`, `SeaChartWidgetSettingsModuleTest`, `SafetyContourPolicyTest`, `HazardOverlayBuilderTest` and `GeoCalcTest` cover provider gating, free online raster contracts, MBTiles/GeoPackage sideload filename contracts, persisted provider normalization, safety-depth policy, DEPARE/DEPCNT/SOUNDG shallow filtering and geometry math. Missing test coverage remains for exact SAF import UI, real MBTiles render screenshots, the safety-contour contract feature shape and real rendered ENC screenshots.
+- Checked unit-test surface: `ChartProviderRegistryTest`, `FreeRasterChartProvidersTest`, `SeaChartSideLoadPackagesTest`, `S57CellSelectorTest`, `S57ToGeoJsonTest`, `EncRendererSkeletonTest`, `SeaChartWidgetSettingsModuleTest`, `SafetyContourPolicyTest`, `HazardOverlayBuilderTest` and `GeoCalcTest` cover provider gating, free online raster contracts, MBTiles/GeoPackage sideload filename contracts, oeSENC rejection, plain S-57 cell selection, SOUNDG/SCAMIN GeoJSON behavior, renderer role planning, persisted provider normalization, safety-depth policy, DEPARE/DEPCNT/SOUNDG shallow filtering and geometry math. Missing test coverage remains for exact SAF import UI, real MBTiles render screenshots, the safety-contour contract feature shape and real rendered ENC screenshots.
 - Targeted JVM check after Task 01 passed: `./gradlew :app:testDebugUnitTest --tests '*ChartProviderRegistryTest' --tests '*FreeRasterChartProvidersTest' --tests '*SeaChartWidgetSettingsModuleTest'`.
 - Full local product gate after Task 01 passed: `./scripts/seafox-product-check.sh --ci --release-r8`. Device/emulator QA still did not run because `adb` is not installed.
 
@@ -107,6 +118,7 @@ Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour 
 - What real ENC fixture should become the canonical Safety Contour proof case: NOAA sample cell, local `seaCHART/ENC_ROOT` cell, or a checked-in minimal GeoJSON fixture?
 - Should Safety Contour render as a highlighted DEPCNT line, shallow DEPARE fill, alarm corridor, or a separate warning overlay derived from `HazardOverlayBuilder.filterDepthAreaFeatures`?
 - Where should concrete `ChartProvider` implementations live, and what is the migration order for MBTiles raster, tile directories, S-57, OpenSeaMap/QMAP raster and future vector-tile providers?
+- Does oeSENC require a vendor SDK/reseller agreement, a plugin boundary, or should it stay out of seaFOX until a licensed partner path is signed?
 - Should GeoPackage be rendered through a local tile adapter, converted to MBTiles on import, or deferred until the provider registry has concrete package handlers?
 - What is the user-facing route creation/import path for normal users: manual waypoint editor, GPX/KML import, or only persisted debug/sample routes for now?
 - Does MOB need a persistent, always-visible cockpit control outside the chart widget, and what confirmation/clear behavior is acceptable on phone and tablet?

@@ -51,6 +51,7 @@ class ChartProviderRegistryTest {
         assertEquals(FeatureAvailability.notImplemented, descriptor.availability)
         assertFalse(descriptor.canSelect)
         assertTrue(ChartProviderCapability.s63Encrypted in descriptor.capabilities)
+        assertTrue(descriptor.userNotice.contains("noch nicht produktiv implementiert"))
     }
 
     @Test
@@ -60,6 +61,8 @@ class ChartProviderRegistryTest {
         assertEquals(FeatureAvailability.beta, descriptor.availability)
         assertTrue(ChartProviderCapability.s57Enc in descriptor.capabilities)
         assertTrue(ChartProviderCapability.offlinePackages in descriptor.capabilities)
+        assertTrue(descriptor.userNotice.contains("Beta"))
+        assertTrue(descriptor.userNotice.contains("nicht ECDIS-zertifiziert"))
     }
 
     @Test
