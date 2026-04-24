@@ -1,0 +1,37 @@
+{
+  "version": 8,
+  "name": "seaFOX Offline Night",
+  "sources": {
+    "world-land": {
+      "type": "geojson",
+      "data": "asset://world_land_110m.geojson"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#0A1628"
+      }
+    },
+    {
+      "id": "land",
+      "type": "fill",
+      "source": "world-land",
+      "paint": {
+        "fill-color": "#1A2A1A",
+        "fill-opacity": 1.0
+      }
+    },
+    {
+      "id": "land-outline",
+      "type": "line",
+      "source": "world-land",
+      "paint": {
+        "line-color": "#2A4A2A",
+        "line-width": 0.8
+      }
+    }
+  ]
+}

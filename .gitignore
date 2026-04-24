@@ -1,0 +1,40 @@
+# macOS / IDE
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.idea/
+*.iml
+
+# Android / Gradle build output
+.gradle/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+build/
+*/build/
+local.properties
+*.apk
+*.aab
+captures/
+outputs/
+output/
+*.log
+*.tmp
+*.orig
+
+# Signing material and local release secrets must never be committed.
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+keystore.properties
+
+# Agent/run artefacts: keep only human-readable run briefs as wiki sources.
+runs/**
+!runs/**/
+!runs/**/brief.md
+llm-wiki/runs/**
+!llm-wiki/runs/**/
+!llm-wiki/runs/**/brief.md

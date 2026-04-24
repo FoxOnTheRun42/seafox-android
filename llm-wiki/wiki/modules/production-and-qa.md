@@ -1,0 +1,140 @@
+---
+title: Production and QA
+type: module
+status: current
+updated: 2026-04-24
+sources:
+  - ../../../docs/PRODUCTION_READINESS.md
+  - ../../../docs/QA_MATRIX.md
+  - ../../../docs/RELEASE_CHECKLIST.md
+  - ../../../docs/PRIVACY_POLICY_DRAFT.md
+  - ../../../docs/SAFETY_DISCLAIMER_DRAFT.md
+  - ../../../.github/workflows/android-ci.yml
+  - ../../../app/build.gradle.kts
+  - ../../../scripts/seafox-product-check.sh
+  - ../../../runs/20260424-095641-ceo-sync/brief.md
+  - ../../../app/src/main/java/com/boat/dashboard/data/BillingCatalog.kt
+  - ../../../app/src/main/java/com/boat/dashboard/data/BillingEntitlementMapper.kt
+  - ../../../app/src/main/java/com/boat/dashboard/data/PlayBillingClientGateway.kt
+  - ../../../app/src/main/java/com/boat/dashboard/CrashReporting.kt
+  - ../../../app/src/main/java/com/boat/dashboard/data/SupportDiagnostics.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/BillingCatalogTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/BillingEntitlementMapperTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/CrashReportFormatterTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/SupportDiagnosticsBuilderTest.kt
+  - ../../../app/src/test
+  - ../sources/product-gate-refresh-2026-04-24.md
+  - ../../../README.md
+  - ../../../app/src/main/java/com/boat/dashboard/data/FeatureAccessPolicy.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/BootAutostartPolicyTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/FeatureAccessPolicyTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/HazardOverlayBuilderTest.kt
+---
+
+# Production and QA
+
+## Summary
+
+seaFOX hat am 2026-04-24 ein gruenes lokales Product Gate fuer statische Gesundheit, Kotlin-Compile, JVM-Tests, Android Lint und Release-R8. Seit der aktuellen Produktionshaertung ist Release-R8 nicht nur ein optionaler Script-Schalter, sondern das dokumentierte CI-/Store-Kandidaten-Gate: README, QA-Matrix, Release-Checklist und GitHub Actions verwenden `./scripts/seafox-product-check.sh --ci --release-r8`. Das ist ein wichtiger Release-Shrinker-Nachweis, aber noch keine Release-Freigabe: `adb` fehlt in der lokalen Umgebung, Emulator-/Device-QA wurde nicht ausgefuehrt, ein signierter Store-Kandidat ist nicht belegt, und Release-Gates fuer Kauf-UI, Backend-Receipt-Validierung, Store-/Beta-Flow und Karten-Licensing bleiben offen. Release-Checklist, Billing-Backend-Contract, Privacy-Policy-Entwurf und Safety-Disclaimer-Entwurf existieren als Arbeitsgrundlage, muessen vor Verkauf aber abgearbeitet, finalisiert und in App/Store uebernommen werden.
+
+## Current Gate Snapshot
+
+Quelle: `runs/20260424-095641-ceo-sync/brief.md`, danach im Wiki-Refresh erneut lokal ausgefuehrt und gegen `scripts/seafox-product-check.sh`, `README.md`, `docs/QA_MATRIX.md`, `docs/RELEASE_CHECKLIST.md`, `.github/workflows/android-ci.yml` und `app/build.gradle.kts` geprueft.
+
+- `./scripts/seafox-product-check.sh --ci`: gruen fuer Static Project Health, `:app:compileDebugKotlin`, `:app:testDebugUnitTest` und `:app:lintDebug`.
+- Der erneute lokale Lauf nach den Billing-/Diagnostics-Aenderungen blieb ebenfalls gruen fuer Compile, JVM-Tests und Lint.
+- Das Gate prueft Pflichtdateien, Launcher-Intent, Application-ID/Namespace, vorhandenes `app/src/test`, Java-/Gradle-Version, Compile, JVM-Unit-Tests, Lint und optional Release-R8 oder Device Readiness.
+- `--release-r8` fuehrt `:app:minifyReleaseWithR8` aus. Laut Script-Hilfe ist das eine Release-R8/Minify-Pruefung ohne signiertes Artefakt.
+- `.github/workflows/android-ci.yml` fuehrt das Product Gate in CI mit `--ci --release-r8` aus und laedt Lint- sowie Release-R8-/Mapping-Reports als Artefakte hoch.
+- `app/build.gradle.kts` aktiviert im Release-Build `isMinifyEnabled = true` und `isShrinkResources = true`; Release-Signing wird nur gesetzt, wenn alle `SEAFOX_RELEASE_*`-Umgebungsvariablen vorhanden sind.
+- `adb` ist lokal nicht installiert. Deshalb wurde keine Emulator- oder Device-QA ausgefuehrt; `--device` waere in dieser Umgebung blockiert.
+- Nach der Produktionshaertung wurde `./scripts/seafox-product-check.sh --ci --release-r8` lokal ausgefuehrt und bestand Compile, JVM-Tests, Lint und `:app:minifyReleaseWithR8`. Ein signiertes Store-Artefakt wurde dadurch nicht erzeugt.
+- Ergebnis: Build-/Unit-/Lint-Status ist gruen; Runtime-, Store- und kommerzielle Release-Faehigkeit sind noch nicht belegt.
+- `docs/RELEASE_CHECKLIST.md` verlangt fuer Store-Kandidaten zusaetzlich `--release-r8`, dokumentierte Phone- und Tablet-QA, Signing-Konfiguration, Store-Wahrheit und Rollback-Artefakte.
+
+## Core Commands
+
+```bash
+./scripts/seafox-product-check.sh
+./scripts/seafox-product-check.sh --ci
+./scripts/seafox-product-check.sh --ci --device
+./scripts/seafox-product-check.sh --ci --release-r8
+./gradlew :app:compileDebugKotlin
+./gradlew :app:testDebugUnitTest
+./gradlew :app:lintDebug
+./gradlew :app:minifyReleaseWithR8
+./gradlew :app:assembleDebug
+```
+
+Hinweis: `assemble`, `bundle`, `install` und `package` erhoehen die Buildnummer in `version.properties`.
+
+## Current Test Coverage
+
+Vorhanden in `app/src/test` am 2026-04-24:
+
+- `GeoCalcTest`: Distanz, Peilung, Zielpunkt, VMG und CPA-Grundlogik.
+- `AutopilotSafetyGateTest`: blockiert nicht bewaffnete, unbestaetigte, Broadcast-Host- und abgelaufene Dispatches; bestaetigte explizite Gateway-Hosts werden akzeptiert.
+- `BackupPrivacyPolicyTest`: private Backups und sensitive Keys wie MMSI, Route, MOB und Router-Host.
+- `BootAutostartPolicyTest`: Boot, Locked-Boot, User-Unlocked und interner Delayed Launch respektieren den gespeicherten Opt-in.
+- `BillingCatalogTest`: eindeutige Produkt-IDs, aktive Pro-/Navigator-/Fleet-App-Subscription-Produkte, case-/whitespace-tolerantes Lookup und inaktive C-MAP/S-63-Chart-Placeholder ohne Tier- oder Lizenzfreigabe.
+- `BillingEntitlementMapperTest`: Restore-Mapping gewaehrt nur verifizierte `purchased` App-Abos, blockiert pending/unverified/rejected und sammelt unacknowledged Tokens.
+- `CrashReportFormatterTest`: lokales Crash-Report-Format mit stabilen Feldern und sicheren Defaults.
+- `EntitlementPolicyTest`: Free/Pro/Navigator/Fleet-Featurelogik, getrennte Chart-Provider-Lizenzen und Ablaufdatum.
+- `FeatureAccessPolicyTest`: Widgets und Premiumfunktionen werden Free/Pro/Navigator/Fleet-Features zugeordnet.
+- `SupportDiagnosticsBuilderTest`: Redaction, optionale sensitive Felder, stabile JSON-Felder, Seiten-/Widget-/Safety-Zusammenfassung und JSON-Datei-Export in ein bereitgestelltes Verzeichnis. Ein user-facing Share-/Export-Flow ist damit noch nicht bewiesen.
+- `ChartProviderRegistryTest`: NOAA/S-57/OpenSeaCharts als selektierbar oder beta, C-MAP lizenzpflichtig, S-63 nicht implementiert.
+- `SafetyContourPolicyTest`: Safety-Depth-Berechnung und Filterung von DEPARE, DEPCNT und SOUNDG.
+- `HazardOverlayBuilderTest`: DEPARE/DEPCNT/SOUNDG-Fixtures, `kind`-Fallback, Tiefenalias-Felder, `DRVAL2`-Fallback und Non-Depth/invalid-depth-Ablehnung.
+
+Fehlend:
+
+- Emulator-Tooling im aktuellen Workspace, weil `adb` hier nicht installiert ist.
+- Emulator-Smoke fuer App-Start, Simulator, Chart, MOB, Settings, Fullscreen-Chart und Support-Diagnostics-Export/Share.
+- manuelle Device-QA auf Tablet und Smartphone, inklusive Boot-Autostart-Verhalten.
+- Compose Screenshot-Tests.
+- NMEA-Replay-Fixtures.
+- Karten-/ENC-Fixtures und Screenshot-Proof fuer Safety Contour und reale Tiefenfeatures.
+- Hardware-Bench-Protokolle.
+
+## Release Gates
+
+Status am 2026-04-24: Compile/Test/Lint sind gruen, aber die Release-Gates sind offen. Vor einer Verkaufs- oder Store-Freigabe braucht seaFOX:
+
+- wiederholbares gruenes `./scripts/seafox-product-check.sh --ci`
+- Device-forderndes Gate mit `./scripts/seafox-product-check.sh --ci --device`, sobald `adb` und mindestens ein Device/Emulator verfuegbar sind
+- verpflichtendes Release-R8/Minify-Gate mit `./scripts/seafox-product-check.sh --ci --release-r8` fuer CI und Store-Kandidaten
+- Emulator-Smoke fuer App-Start, Simulator, Chart, MOB, Settings und kritische Settings-/Export-Pfade
+- manuelle Device-QA auf Tablet und Smartphone, jeweils Portrait/Landscape, Offline, GPS-Berechtigungen, MOB, Fullscreen-Chart, Kartenquelle, NMEA-Router-Ausfall, Diagnose-Redaction und Boot-Autostart nur nach Opt-in
+- crash-freier Beta-Lauf mit Testpersonen
+- Datenschutz, Impressum, Safety Disclaimer und Store Listing; `docs/PRIVACY_POLICY_DRAFT.md` und `docs/SAFETY_DISCLAIMER_DRAFT.md` sind Entwuerfe und brauchen juristische Finalisierung
+- Release-Signing, Keystore-Verantwortung und Rollback-Plan; die Checklist nennt `SEAFOX_RELEASE_STORE_FILE`, `SEAFOX_RELEASE_STORE_PASSWORD`, `SEAFOX_RELEASE_KEY_ALIAS` und `SEAFOX_RELEASE_KEY_PASSWORD`, aber ein signierter Kandidat ist noch nicht nachgewiesen
+- Kauf-UI, Play-Console-Produkte, Trial-Regeln und Backend-Receipt-Validierung fuer die vorhandene Play-Billing-Gateway-Schicht
+- geklaerten Karten-/Provider-Lizenzstatus fuer beworbene Features
+- Store-Wahrheit: seaFOX als Marine-Assistent/Dashboard, nicht als zertifiziertes ECDIS; Safety Contour nur als Assistenzfunktion, bis echte ENC-Fixtures und Device-Screenshots vorliegen
+
+## Monetization Notes
+
+Empfohlene Stufen:
+
+- Free: Simulator, Basis-Dashboard, begrenzte Widgets, Online-/Open-Chart-Ansicht.
+- Pro: Offline-Pakete, volle Widget-Konfiguration, Routen/Tracks, AIS-CPA, MOB, Ankerwache, Laylines, Trendkurven.
+- Navigator: erweiterte Kartenpakete, Safety-Contour, erweiterte Alarme, Export/Import, Bootprofile.
+- Fleet/Commercial: mehrere Boote, Support, Diagnosepakete, MDM-/Tablet-Setup, Lizenzverwaltung.
+
+Kartenlizenzen sind getrennt von App-Feature-Entitlements zu behandeln. Der aktuelle Stand ist Domain-/Gatewaylogik mit JVM-Tests: `BillingCatalog.kt` kennt aktive App-Abo-Produkt-IDs fuer Pro, Navigator und Fleet (`seafox.pro.monthly/yearly`, `seafox.navigator.monthly/yearly`, `seafox.fleet.monthly/yearly`), waehrend `seafox.chart.cmap.external` und `seafox.chart.s63.external` nur inaktive externe Chart-License-Placeholder sind. `PlayBillingClientGateway.kt` bindet die Play Billing Library fuer App-Subscription-Restore und Acknowledge an. `BillingEntitlementMapper.kt` gewaehrt Entitlements nur fuer verifizierte `purchased` Records und markiert unacknowledged Tokens. `FeatureAccessPolicy.kt` mappt Widgets und Premiumfunktionen auf benoetigte App-Features. Play-Console-Produkte, Kauf-UI, Trial-Regeln, Server-/Receipt-Pruefung, UI-Freischaltung und harte Runtime-Enforcement-Pfade sind noch offen. C-MAP/S-63 duerfen bis zur geklaerten Lizenz-, Zertifikats-, Permit- und Provider-Integration nicht als kaufbare oder freigeschaltete Verkaufsfeatures behandelt werden.
+
+## Privacy and Safety Drafts
+
+- `docs/PRIVACY_POLICY_DRAFT.md` beschreibt Bootsdaten, Netzwerkdaten, Geraetedaten und optionale Supportdaten; lokale Speicherung ist Standard, Backups bleiben privat, oeffentliche Exporte brauchen Nutzeraktion.
+- Sensible Daten sind unter anderem MMSI, Route, MOB-Position, GPS-/Trackdaten, Router-Host, NMEA-Quellen und Diagnoseinformationen. Diagnoseberichte redigieren Routerdaten standardmaessig.
+- seaFOX soll ohne verpflichtenden Cloud-Account funktionieren. Lokale Crash-Reports werden privat in App-Dateien geschrieben; Cloud-Backup, Telemetrie, externes Crash-Reporting oder Support-Upload brauchen vor Aktivierung Nutzerinformation und dokumentierte Rechtsgrundlage.
+- Offen vor Store-Release: Loeschkonzept, Exportkonzept, Kontaktweg, Impressum, Rechtsgrundlage, Drittanbieter-Liste und juristische Finalisierung.
+- `docs/SAFETY_DISCLAIMER_DRAFT.md` setzt die Produktwahrheit: seaFOX ist kein zertifiziertes ECDIS, kein amtliches Navigationssystem und kein Ersatz fuer zugelassene Seekarten, Ausguck, Seemannschaft oder eigenverantwortliche Navigation.
+- Autopilot-, Safety-Contour-, CPA/TCPA-, MOB-, Routen-, Layline-, Alarm- und Tiefenfunktionen bleiben Assistenzfunktionen und muessen vom Skipper geprueft werden.
+
+## Important Links
+
+- [[chart-system]]
+- [[dashboard-and-widgets]]
+- [[data-ingestion-and-safety]]
+- [[open-questions]]
