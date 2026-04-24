@@ -79,7 +79,7 @@ Aktuell vorhandene Productization-Bausteine:
 - Autopilot-Kommandos laufen ueber ein Safety Gate.
 - Backup-Privacy und Boot-Autostart sind als Produktzustaende modelliert; Boot-Autostart braucht weiter Device-Nachweis.
 - Support Diagnostics haben Builder, JSON-Vertrag und internen File-Exporter mit JVM-Tests; Export-/Share-/Triage-Workflow bleibt Release-Gate.
-- `BillingCatalog`, `EntitlementPolicy`, Play-Restore-Mapping, optionaler Validation-HTTP-Client und Runtime-Restore-Applier sind getestet. Offen bleiben Kauf-Flow, Play-Console-Produkte, Trial-Regeln, produktiver Server-Validator, Device-QA und vollstaendige UI-Freischaltung aller Premiumaktionen.
+- `BillingCatalog`, `EntitlementPolicy`, Play-Kauf-/Restore-Mapping, optionaler Validation-HTTP-Client und Runtime-Restore-Applier sind getestet. Offen bleiben Play-Console-Produkte/Preise, Trial-Regeln, produktiver Server-Validator, Play-Device-QA und vollstaendige UI-Freischaltung aller Premiumaktionen.
 - App-Feature-Entitlements sind von Kartenlizenzen getrennt. C-Map/S-63 sind inaktive beziehungsweise nicht auswaehlbare Platzhalter, bis Lizenz, Zertifikate, Entitlements und Nutzungsbedingungen geklaert sind.
 - `ChartProvider`/`ChartProviderRegistry` markieren Provider-Faehigkeiten und Availability; die Runtime nutzt aber noch weitgehend den bestehenden `SeaChartMapProvider`-/Download-Pfad. Das ist teilweise Skeleton-/Migrationsarbeit, nicht fertige Provider-Architektur.
 

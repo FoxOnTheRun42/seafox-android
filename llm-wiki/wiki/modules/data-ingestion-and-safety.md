@@ -39,7 +39,7 @@ sources:
 
 seaFOX sammelt Borddaten ueber Netzwerk, GPS, BLE und Simulation. Weil es ein Marine-Kontext ist, sind Safety-Gates, Datenschutz, Diagnose-Redaktion und ehrliche Produkt-/Billing-Aussagen Produktbestandteile, nicht nur technische Details.
 
-Stand 2026-04-24: Die Domainlogik fuer Autopilot Safety Gate, Backup Privacy, Boot-Autostart-Opt-in, Support Diagnostics, Entitlements, Feature Access, Billing-Restore-Mapping, Runtime-Widget-Gates und lokale Crash-Reports ist sichtbar und getestet. Die groessten Product/Safety-Risiken liegen nicht in fehlender Syntax, sondern in Runtime-Truth: Boot-Autostart ist im Code gegen Boot, Unlock und internen Delayed Launch gehaertet, aber noch nicht auf Device/Emulator bewiesen; Entitlements sind jetzt an einen user-facing Play-Restore-Pfad mit optionaler Backend-HTTP-Validation angebunden, aber Kauf-Flow, produktiver Backend-Service und vollstaendige UI-Laufzeitgates fehlen weiter; Support Diagnostics bekommt einen user-facing Share-Flow-Vertrag ueber App-Cache, FileProvider und Android-Sharesheet nach Consent, aber noch keinen Device-QA-Nachweis.
+Stand 2026-04-24: Die Domainlogik fuer Autopilot Safety Gate, Backup Privacy, Boot-Autostart-Opt-in, Support Diagnostics, Entitlements, Feature Access, Billing-Restore-Mapping, Runtime-Widget-Gates und lokale Crash-Reports ist sichtbar und getestet. Die groessten Product/Safety-Risiken liegen nicht in fehlender Syntax, sondern in Runtime-Truth: Boot-Autostart ist im Code gegen Boot, Unlock und internen Delayed Launch gehaertet, aber noch nicht auf Device/Emulator bewiesen; Entitlements sind jetzt an user-facing Play-Kauf-/Restore-Pfade mit optionaler Backend-HTTP-Validation angebunden, aber Play-Console-Produkte, produktiver Backend-Service, echte Play-Device-QA und vollstaendige UI-Laufzeitgates fehlen weiter; Support Diagnostics bekommt einen user-facing Share-Flow-Vertrag ueber App-Cache, FileProvider und Android-Sharesheet nach Consent, aber noch keinen Device-QA-Nachweis.
 
 Seit Chart Roadmap Task 03 unterscheidet `EntitlementSnapshot` auch eigene Kartenpakete (`ownedChartPackIds`) von externen Provider-Lizenzen (`licensedChartProviderIds`). Das erste first-party Pack ist `seafox-premium-de-coast` ueber Play-`INAPP` `seafox.chartpack.de_coast`.
 
@@ -102,16 +102,16 @@ Aus `README.md`:
 - First-party chart-pack product `seafox.chartpack.de_coast` is active as a Play `INAPP` and maps to `ownedChartPackIds = ["seafox-premium-de-coast"]`; it does not grant a subscription tier or external provider license.
 - Commercial chart-license placeholders are inactive: `seafox.chart.cmap.external` and `seafox.chart.s63.external` return no app tier and no chart provider license. They must not be marketed as currently sellable or runtime-enabled.
 - `BillingCatalog` normalizes product lookup by trim/lowercase and exposes `activeProducts()`, `tierForProductId()`, `chartPackForProductId()`, `chartProviderForProductId()`, `activeSubscriptionProductIds()` and `activeInAppProductIds()`.
-- `PlayBillingClientGateway` uses Google Play Billing for subscription restore, one-time in-app-product restore and acknowledge paths.
+- `PlayBillingClientGateway` uses Google Play Billing for ProductDetails lookup, purchase flow launch, subscription restore, one-time in-app-product restore and acknowledge paths.
 - `PlayBillingPurchaseMapper` converts real Play `Purchase` objects to internal `BillingPurchaseRecord`s and defaults them to `unverified`; backend validation must upgrade them explicitly.
 - `BillingValidationJson` parses backend responses into token decisions and defaults unknown status values to `unverified`; serialized decisions do not echo purchase tokens.
 - `BillingValidationHttpClient` can POST validation requests to `SEAFOX_BILLING_VALIDATION_URL`; blank endpoints return safe `unverified` decisions.
-- `BillingRestoreCoordinator` is the pure client seam between Play Restore and a future backend validator: it creates `BillingValidationRequest`s, treats missing backend decisions as `unverified`, merges verified/rejected decisions back into purchase records and then calls `BillingEntitlementMapper`.
+- `BillingRestoreCoordinator` is the pure client seam between Play purchases/restores and a backend validator: it creates `BillingValidationRequest`s, treats missing backend decisions as `unverified`, merges verified/rejected decisions back into purchase records and then calls `BillingEntitlementMapper`.
 - `BillingRuntimeRestoreApplier` updates the local snapshot only when restore validation is complete. Missing backend decisions, no configured endpoint and pending-only purchases preserve the current snapshot instead of silently downgrading or granting.
 - `BillingEntitlementMapper` grants tiers only from verified `purchased` records; pending, unverified and rejected purchases do not grant access.
 - `BillingEntitlementMapper` grants first-party chart-pack ownership only from verified `purchased` records; pending, unverified and rejected pack purchases do not grant ownership.
 - Unacknowledged verified purchase tokens are surfaced for acknowledge handling.
-- There is still no productive backend receipt validator, Play Console setup, purchase flow, trial model, full runtime UI/action gate coverage or premium-pack delivery backend.
+- There is still no productive backend receipt validator, Play Console setup, trial model, Play-device proof, full runtime UI/action gate coverage or premium-pack delivery backend.
 - Runtime widget adds now call `RuntimeEntitlementGate`; denied widgets produce a user-facing message naming the required tier and stating that chart packages/licenses do not unlock app features.
 
 ## Support Diagnostics Truth

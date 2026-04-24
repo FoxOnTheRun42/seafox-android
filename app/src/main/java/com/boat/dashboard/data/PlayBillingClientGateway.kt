@@ -1,13 +1,17 @@
 package com.seafox.nmea_dashboard.data
 
+import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
+import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
+import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 
 class PlayBillingClientGateway(
@@ -84,6 +88,47 @@ class PlayBillingClientGateway(
                 onResult(result, subscriptions + inAppPurchases)
             }
         }
+    }
+
+    fun queryProductDetails(
+        productId: String,
+        productType: String,
+        onResult: (BillingResult, ProductDetails?) -> Unit,
+    ) {
+        val product = QueryProductDetailsParams.Product.newBuilder()
+            .setProductId(productId)
+            .setProductType(productType)
+            .build()
+        val params = QueryProductDetailsParams.newBuilder()
+            .setProductList(listOf(product))
+            .build()
+        billingClient.queryProductDetailsAsync(params) { billingResult, result ->
+            onResult(billingResult, result.productDetailsList.firstOrNull())
+        }
+    }
+
+    fun launchPurchaseFlow(
+        activity: Activity,
+        productDetails: ProductDetails,
+    ): BillingResult {
+        val productDetailsParams = BillingFlowParams.ProductDetailsParams.newBuilder()
+            .setProductDetails(productDetails)
+            .apply {
+                if (productDetails.productType == BillingClient.ProductType.SUBS) {
+                    val offerToken = productDetails.subscriptionOfferDetails
+                        ?.firstOrNull()
+                        ?.offerToken
+                        .orEmpty()
+                    if (offerToken.isNotBlank()) {
+                        setOfferToken(offerToken)
+                    }
+                }
+            }
+            .build()
+        val flowParams = BillingFlowParams.newBuilder()
+            .setProductDetailsParamsList(listOf(productDetailsParams))
+            .build()
+        return billingClient.launchBillingFlow(activity, flowParams)
     }
 
     fun acknowledgePurchase(

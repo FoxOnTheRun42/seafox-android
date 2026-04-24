@@ -53,6 +53,19 @@ class BillingCatalogTest {
     }
 
     @Test
+    fun activeProductsExposeUserFacingPurchaseLabels() {
+        assertEquals(
+            "seaFOX Navigator jährlich",
+            BillingCatalog.activeProductForProductId("seafox.navigator.yearly")?.displayName,
+        )
+        assertEquals(
+            "seaFOX Premium DE-Küste",
+            BillingCatalog.activeProductForProductId(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PRODUCT_ID)?.displayName,
+        )
+        assertNull(BillingCatalog.activeProductForProductId("seafox.chart.cmap.external"))
+    }
+
+    @Test
     fun exposesPlayProductTypesForRestoreQueries() {
         assertTrue("seafox.pro.monthly" in BillingCatalog.activeSubscriptionProductIds())
         assertTrue(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PRODUCT_ID in BillingCatalog.activeInAppProductIds())

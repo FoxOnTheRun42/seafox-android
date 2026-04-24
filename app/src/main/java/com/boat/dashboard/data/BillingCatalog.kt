@@ -18,6 +18,7 @@ data class BillingProductDescriptor(
     val productId: String,
     val kind: BillingProductKind,
     val playProductType: BillingPlayProductType,
+    val displayName: String = productId,
     val tier: SubscriptionTier? = null,
     val chartPackId: String? = null,
     val chartProviderId: String? = null,
@@ -33,42 +34,49 @@ object BillingCatalog {
             productId = "seafox.pro.monthly",
             kind = BillingProductKind.appSubscription,
             playProductType = BillingPlayProductType.subscription,
+            displayName = "seaFOX Pro monatlich",
             tier = SubscriptionTier.PRO,
         ),
         BillingProductDescriptor(
             productId = "seafox.pro.yearly",
             kind = BillingProductKind.appSubscription,
             playProductType = BillingPlayProductType.subscription,
+            displayName = "seaFOX Pro jährlich",
             tier = SubscriptionTier.PRO,
         ),
         BillingProductDescriptor(
             productId = "seafox.navigator.monthly",
             kind = BillingProductKind.appSubscription,
             playProductType = BillingPlayProductType.subscription,
+            displayName = "seaFOX Navigator monatlich",
             tier = SubscriptionTier.NAVIGATOR,
         ),
         BillingProductDescriptor(
             productId = "seafox.navigator.yearly",
             kind = BillingProductKind.appSubscription,
             playProductType = BillingPlayProductType.subscription,
+            displayName = "seaFOX Navigator jährlich",
             tier = SubscriptionTier.NAVIGATOR,
         ),
         BillingProductDescriptor(
             productId = "seafox.fleet.monthly",
             kind = BillingProductKind.appSubscription,
             playProductType = BillingPlayProductType.subscription,
+            displayName = "seaFOX Fleet monatlich",
             tier = SubscriptionTier.FLEET,
         ),
         BillingProductDescriptor(
             productId = "seafox.fleet.yearly",
             kind = BillingProductKind.appSubscription,
             playProductType = BillingPlayProductType.subscription,
+            displayName = "seaFOX Fleet jährlich",
             tier = SubscriptionTier.FLEET,
         ),
         BillingProductDescriptor(
             productId = SEAFOX_PREMIUM_DE_COAST_PRODUCT_ID,
             kind = BillingProductKind.firstPartyChartPack,
             playProductType = BillingPlayProductType.inAppProduct,
+            displayName = "seaFOX Premium DE-Küste",
             chartPackId = SEAFOX_PREMIUM_DE_COAST_PACK_ID,
         ),
         BillingProductDescriptor(
@@ -93,6 +101,11 @@ object BillingCatalog {
 
     fun activeProductsForPlayType(playProductType: BillingPlayProductType): List<BillingProductDescriptor> {
         return activeProducts().filter { product -> product.playProductType == playProductType }
+    }
+
+    fun activeProductForProductId(productId: String): BillingProductDescriptor? {
+        val product = findProduct(productId) ?: return null
+        return product.takeIf { it.active }
     }
 
     fun activeSubscriptionProductIds(): Set<String> {

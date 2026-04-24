@@ -37,6 +37,7 @@ Diese Matrix ist der Produktvertrag zwischen Entwicklung, Design, QA und Release
 | Billing Validation JSON | Backend-Antwort zu Token-Decision | Unbekannte Statuswerte bleiben `unverified`; Response serialisiert keine Tokens zurueck | JVM parser |
 | Billing Restore | Play Restore + Servervalidierung | Fehlende oder abgelehnte Serverantwort schaltet nichts frei; nur verified purchased Records erreichen Entitlements | JVM coordinator + mapper |
 | Billing Runtime Restore | Abo & Karten im Datenmenue | Play-Restore schreibt den lokalen Snapshot nur nach kompletter Validation; pending/unverified ueberschreibt bestehende Freischaltungen nicht | JVM applier + UI manual |
+| Play Purchase Flow | Abo & Karten Kaufbuttons | ProductDetails werden ueber Play geladen; Kaufdialog startet nur fuer aktive Katalogprodukte; PurchasesUpdated schaltet erst nach Validation frei | Compile + manual Play QA |
 | Billing Validation HTTP | Receipt-POST an Backend | Request enthaelt nur Validation-Inputs; leerer Endpoint gibt sichere `unverified`-Decision | JVM client contract |
 | Premium Chart Pack | seaFOX first-party Kartenpaket als Play INAPP | Verifizierter Kauf setzt nur `ownedChartPackIds`; ohne lokale Paketdatei bleibt Status `incomplete`; C-Map/S-63 bleiben unberuehrt | JVM Billing coordinator/mapper + package status |
 | Feature Access | Widgets und Premium-Funktionen | Free/Pro/Navigator/Fleet liefern klare allow/deny-Entscheidungen | JVM policy |

@@ -165,6 +165,10 @@ import com.seafox.nmea_dashboard.data.DashboardState
 import com.seafox.nmea_dashboard.data.BoatProfile
 import com.seafox.nmea_dashboard.data.BoatType
 import com.seafox.nmea_dashboard.data.BillingRestoreCoordinator
+import com.seafox.nmea_dashboard.data.BillingCatalog
+import com.seafox.nmea_dashboard.data.BillingPlayProductType
+import com.seafox.nmea_dashboard.data.BillingProductDescriptor
+import com.seafox.nmea_dashboard.data.BillingPurchaseRecord
 import com.seafox.nmea_dashboard.data.BillingRuntimeRestoreApplier
 import com.seafox.nmea_dashboard.data.BillingValidationDecision
 import com.seafox.nmea_dashboard.data.BillingValidationHttpClient
@@ -496,6 +500,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var tabletLocationPermissionLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var dalyBlePermissionLauncher: ActivityResultLauncher<Array<String>>
     private val userWarningDialogState = mutableStateOf<Pair<String, String>?>(null)
+    private var activeBillingGateway: PlayBillingClientGateway? = null
 
     private fun postUserWarning(
         message: String,
@@ -506,82 +511,225 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun attachBillingGateway(gateway: PlayBillingClientGateway) {
+        activeBillingGateway?.endConnection()
+        activeBillingGateway = gateway
+    }
+
+    private fun finishBillingGateway(gateway: PlayBillingClientGateway) {
+        if (activeBillingGateway === gateway) {
+            activeBillingGateway = null
+        }
+        gateway.endConnection()
+    }
+
+    private fun publishBillingStatus(
+        onStatus: (String) -> Unit,
+        message: String,
+    ) {
+        runOnUiThread { onStatus(message) }
+    }
+
+    private fun applyBillingPurchaseRecords(
+        scope: CoroutineScope,
+        gateway: PlayBillingClientGateway,
+        purchaseRecords: List<BillingPurchaseRecord>,
+        allowEmptyRestoreClears: Boolean,
+        onStatus: (String) -> Unit,
+    ) {
+        if (purchaseRecords.isEmpty() && !allowEmptyRestoreClears) {
+            publishBillingStatus(onStatus, "Google Play hat keinen abgeschlossenen Kauf zurückgegeben.")
+            finishBillingGateway(gateway)
+            return
+        }
+
+        scope.launch {
+            val endpoint = BuildConfig.BILLING_VALIDATION_ENDPOINT.trim()
+            val validationRequests = BillingRestoreCoordinator.validationRequestsFor(purchaseRecords)
+            val validationDecisions = if (endpoint.isBlank()) {
+                emptyList()
+            } else {
+                withContext(Dispatchers.IO) {
+                    validationRequests.map { request ->
+                        runCatching {
+                            BillingValidationHttpClient.validate(
+                                endpointUrl = endpoint,
+                                packageName = applicationContext.packageName,
+                                request = request,
+                            )
+                        }.getOrElse {
+                            BillingValidationDecision(
+                                purchaseToken = request.purchaseToken,
+                                verificationStatus = PurchaseVerificationStatus.unverified,
+                            )
+                        }
+                    }
+                }
+            }
+
+            val coordinatedResult = BillingRestoreCoordinator.restoreWithValidation(
+                purchases = purchaseRecords,
+                validationDecisions = validationDecisions,
+            )
+            val update = BillingRuntimeRestoreApplier.reduce(
+                currentSnapshot = viewModel.state.value.entitlementSnapshot,
+                coordinatedResult = coordinatedResult,
+                activePurchaseCount = purchaseRecords.size,
+                backendConfigured = endpoint.isNotBlank(),
+            )
+            if (update.applySnapshot) {
+                viewModel.updateEntitlementSnapshot(update.entitlementSnapshot)
+            }
+            update.unacknowledgedPurchaseTokens.forEach { token ->
+                gateway.acknowledgePurchase(token) { _ -> }
+            }
+            publishBillingStatus(onStatus, update.message)
+            finishBillingGateway(gateway)
+        }
+    }
+
     private fun restoreBillingEntitlements(
         scope: CoroutineScope,
         onStatus: (String) -> Unit,
     ) {
         val gateway = PlayBillingClientGateway(this) { _, _ -> }
-        val publishStatus: (String) -> Unit = { message ->
-            runOnUiThread { onStatus(message) }
-        }
+        attachBillingGateway(gateway)
 
-        publishStatus("Verbinde mit Google Play ...")
+        publishBillingStatus(onStatus, "Verbinde mit Google Play ...")
         gateway.startConnection(
             onReady = { setupResult ->
                 if (setupResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                    publishStatus("Google Play Billing ist nicht bereit: ${setupResult.debugMessage}")
-                    gateway.endConnection()
+                    publishBillingStatus(onStatus, "Google Play Billing ist nicht bereit: ${setupResult.debugMessage}")
+                    finishBillingGateway(gateway)
                     return@startConnection
                 }
 
                 gateway.queryActiveEntitlementPurchases { billingResult, purchases ->
                     if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                        publishStatus("Käufe konnten nicht abgefragt werden: ${billingResult.debugMessage}")
-                        gateway.endConnection()
+                        publishBillingStatus(onStatus, "Käufe konnten nicht abgefragt werden: ${billingResult.debugMessage}")
+                        finishBillingGateway(gateway)
                         return@queryActiveEntitlementPurchases
                     }
 
-                    val purchaseRecords = PlayBillingPurchaseMapper.toPurchaseRecords(purchases)
-                    scope.launch {
-                        val endpoint = BuildConfig.BILLING_VALIDATION_ENDPOINT.trim()
-                        val validationRequests = BillingRestoreCoordinator.validationRequestsFor(purchaseRecords)
-                        val validationDecisions = if (endpoint.isBlank()) {
-                            emptyList()
-                        } else {
-                            withContext(Dispatchers.IO) {
-                                validationRequests.map { request ->
-                                    runCatching {
-                                        BillingValidationHttpClient.validate(
-                                            endpointUrl = endpoint,
-                                            packageName = applicationContext.packageName,
-                                            request = request,
-                                        )
-                                    }.getOrElse {
-                                        BillingValidationDecision(
-                                            purchaseToken = request.purchaseToken,
-                                            verificationStatus = PurchaseVerificationStatus.unverified,
-                                        )
-                                    }
+                    applyBillingPurchaseRecords(
+                        scope = scope,
+                        gateway = gateway,
+                        purchaseRecords = PlayBillingPurchaseMapper.toPurchaseRecords(purchases),
+                        allowEmptyRestoreClears = true,
+                        onStatus = onStatus,
+                    )
+                }
+            },
+            onDisconnected = {
+                publishBillingStatus(onStatus, "Google Play Billing wurde getrennt. Bitte später erneut versuchen.")
+                finishBillingGateway(gateway)
+            },
+        )
+    }
+
+    private fun startBillingPurchase(
+        productId: String,
+        scope: CoroutineScope,
+        onStatus: (String) -> Unit,
+    ) {
+        val product = BillingCatalog.activeProductForProductId(productId)
+        val playProductType = product?.let { billingPlayProductType(it) }
+        if (product == null || playProductType == null) {
+            publishBillingStatus(onStatus, "Produkt ist in seaFOX nicht kaufbar: $productId")
+            return
+        }
+
+        lateinit var gateway: PlayBillingClientGateway
+        gateway = PlayBillingClientGateway(this) { billingResult, purchases ->
+            when (billingResult.responseCode) {
+                BillingClient.BillingResponseCode.OK -> {
+                    applyBillingPurchaseRecords(
+                        scope = scope,
+                        gateway = gateway,
+                        purchaseRecords = PlayBillingPurchaseMapper.toPurchaseRecords(purchases),
+                        allowEmptyRestoreClears = false,
+                        onStatus = onStatus,
+                    )
+                }
+                BillingClient.BillingResponseCode.USER_CANCELED -> {
+                    publishBillingStatus(onStatus, "Kauf abgebrochen. Es wurde nichts geändert.")
+                    finishBillingGateway(gateway)
+                }
+                else -> {
+                    publishBillingStatus(onStatus, "Kauf konnte nicht abgeschlossen werden: ${billingResult.debugMessage}")
+                    finishBillingGateway(gateway)
+                }
+            }
+        }
+        attachBillingGateway(gateway)
+
+        publishBillingStatus(onStatus, "Lade Google-Play-Produkt: ${product.displayName} ...")
+        gateway.startConnection(
+            onReady = { setupResult ->
+                if (setupResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                    publishBillingStatus(onStatus, "Google Play Billing ist nicht bereit: ${setupResult.debugMessage}")
+                    finishBillingGateway(gateway)
+                    return@startConnection
+                }
+
+                gateway.queryProductDetails(
+                    productId = product.productId,
+                    productType = playProductType,
+                ) { detailsResult, productDetails ->
+                    if (detailsResult.responseCode != BillingClient.BillingResponseCode.OK || productDetails == null) {
+                        publishBillingStatus(
+                            onStatus,
+                            "Produkt ist in Google Play nicht verfügbar. Prüfe Play-Console-Produkt: ${product.productId}",
+                        )
+                        finishBillingGateway(gateway)
+                        return@queryProductDetails
+                    }
+
+                    val launchResult = gateway.launchPurchaseFlow(
+                        activity = this,
+                        productDetails = productDetails,
+                    )
+                    when (launchResult.responseCode) {
+                        BillingClient.BillingResponseCode.OK -> {
+                            publishBillingStatus(onStatus, "Google-Play-Kaufdialog geöffnet.")
+                        }
+                        BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
+                            publishBillingStatus(onStatus, "Produkt ist bereits gekauft. Starte Wiederherstellung ...")
+                            gateway.queryActiveEntitlementPurchases { billingResult, purchases ->
+                                if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                                    publishBillingStatus(onStatus, "Käufe konnten nicht abgefragt werden: ${billingResult.debugMessage}")
+                                    finishBillingGateway(gateway)
+                                    return@queryActiveEntitlementPurchases
                                 }
+                                applyBillingPurchaseRecords(
+                                    scope = scope,
+                                    gateway = gateway,
+                                    purchaseRecords = PlayBillingPurchaseMapper.toPurchaseRecords(purchases),
+                                    allowEmptyRestoreClears = true,
+                                    onStatus = onStatus,
+                                )
                             }
                         }
-
-                        val coordinatedResult = BillingRestoreCoordinator.restoreWithValidation(
-                            purchases = purchaseRecords,
-                            validationDecisions = validationDecisions,
-                        )
-                        val update = BillingRuntimeRestoreApplier.reduce(
-                            currentSnapshot = viewModel.state.value.entitlementSnapshot,
-                            coordinatedResult = coordinatedResult,
-                            activePurchaseCount = purchaseRecords.size,
-                            backendConfigured = endpoint.isNotBlank(),
-                        )
-                        if (update.applySnapshot) {
-                            viewModel.updateEntitlementSnapshot(update.entitlementSnapshot)
+                        else -> {
+                            publishBillingStatus(onStatus, "Kaufdialog konnte nicht gestartet werden: ${launchResult.debugMessage}")
+                            finishBillingGateway(gateway)
                         }
-                        update.unacknowledgedPurchaseTokens.forEach { token ->
-                            gateway.acknowledgePurchase(token) { _ -> }
-                        }
-                        publishStatus(update.message)
-                        gateway.endConnection()
                     }
                 }
             },
             onDisconnected = {
-                publishStatus("Google Play Billing wurde getrennt. Bitte später erneut versuchen.")
-                gateway.endConnection()
+                publishBillingStatus(onStatus, "Google Play Billing wurde getrennt. Bitte später erneut versuchen.")
+                finishBillingGateway(gateway)
             },
         )
+    }
+
+    private fun billingPlayProductType(product: BillingProductDescriptor): String? {
+        return when (product.playProductType) {
+            BillingPlayProductType.subscription -> BillingClient.ProductType.SUBS
+            BillingPlayProductType.inAppProduct -> BillingClient.ProductType.INAPP
+            BillingPlayProductType.external -> null
+        }
     }
 
     @OptIn(ExperimentalFoundationApi::class)
@@ -979,6 +1127,9 @@ class MainActivity : ComponentActivity() {
                         },
                         onRestoreBillingEntitlements = { onStatus ->
                             restoreBillingEntitlements(scope, onStatus)
+                        },
+                        onStartBillingPurchase = { productId, onStatus ->
+                            startBillingPurchase(productId, scope, onStatus)
                         },
                         onUpdateRouterSimulationOrigin = viewModel::updateRouterSimulationOrigin,
                         onClearStoredData = viewModel::clearAllStoredData,
@@ -5444,6 +5595,7 @@ private fun DashboardTopBar(
     onUpdateBootAutostartEnabled: (Boolean) -> Unit,
     onShareSupportDiagnostics: () -> Result<String>,
     onRestoreBillingEntitlements: ((String) -> Unit) -> Unit,
+    onStartBillingPurchase: (String, (String) -> Unit) -> Unit,
     onUpdateRouterSimulationOrigin: (Float, Float) -> Unit,
     onClearStoredData: () -> Unit,
     onRestoreStoredData: () -> Boolean,
@@ -6680,6 +6832,23 @@ private fun DashboardTopBar(
                                 "Restore fragt aktive Google-Play-Abos und In-App-Kartenpakete ab. Freischaltung erfolgt nur nach Servervalidierung.",
                                 style = menuTextStyle.copy(color = menuMutedColor),
                             )
+                            HorizontalDivider()
+                            Text("Kaufen", style = menuTextStyle)
+                            BillingCatalog.activeProducts()
+                                .filter { product -> product.playProductType != BillingPlayProductType.external }
+                                .forEach { product ->
+                                    CompactMenuTextButton(
+                                        text = product.displayName,
+                                        style = menuTextStyle,
+                                        fillWidth = true,
+                                        onClick = {
+                                            billingRestoreStatus = "Starte Kauf: ${product.displayName} ..."
+                                            onStartBillingPurchase(product.productId) { status ->
+                                                billingRestoreStatus = status
+                                            }
+                                        },
+                                    )
+                                }
                             billingRestoreStatus?.let { status ->
                                 HorizontalDivider()
                                 Text(status, style = menuTextStyle)
@@ -16171,6 +16340,7 @@ fun TopBarPreview() {
             onUpdateBootAutostartEnabled = {},
             onShareSupportDiagnostics = { Result.success("preview-diagnostics.json") },
             onRestoreBillingEntitlements = { onStatus -> onStatus("Preview: keine Play-Verbindung.") },
+            onStartBillingPurchase = { _, onStatus -> onStatus("Preview: kein Kaufdialog.") },
             onUpdateRouterSimulationOrigin = { _, _ -> },
             onClearStoredData = {},
             onRestoreStoredData = { false },

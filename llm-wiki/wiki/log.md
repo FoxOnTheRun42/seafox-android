@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Play Billing purchase flow
+
+- Sources: `../app/src/main/java/com/boat/dashboard/data/PlayBillingClientGateway.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingCatalog.kt`, `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/BillingCatalogTest.kt`
+- Updated: `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`, `wiki/log.md`
+- Notes: `Abo & Karten` zeigt aktive Katalogprodukte als Kaufbuttons. Das Gateway fragt `ProductDetails`, startet `launchBillingFlow` und leitet `PurchasesUpdated` in dieselbe Backend-Validation/Runtime-Applier-Pipeline wie Restore. Ohne Play-Console-Produkt oder ohne `SEAFOX_BILLING_VALIDATION_URL` entsteht keine Freischaltung. Play-Console-Setup, Preise, produktiver Backend-Service und Device-Play-QA bleiben offen.
+
 ## [2026-04-24] implementation | Billing runtime restore UI
 
 - Sources: `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingRuntimeRestoreApplier.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingValidationHttpClient.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/BillingRuntimeRestoreApplierTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/BillingValidationHttpClientTest.kt`, `../docs/BILLING_BACKEND_CONTRACT.md`
