@@ -117,11 +117,12 @@ Aus `README.md`:
 - There is still no productive backend receipt validator, Play Console setup, trial model, Play-device proof, full runtime UI/action gate coverage or premium-pack delivery backend.
 - Runtime widget adds now call `RuntimeEntitlementGate`; denied widgets produce a user-facing message naming the required tier and stating that chart packages/licenses do not unlock app features.
 - Existing premium widgets also call `RuntimeEntitlementGate.canUseWidget` during dashboard rendering. If a restore downgrades to Free or an entitlement expires, AIS, Anchor Watch, NMEA diagnostics and System Performance cards stay movable/deletable but show a locked placeholder and do not execute their premium widget render branches. The System Performance sampler is also disabled unless an entitled System widget is present.
+- `RuntimeEntitlementGate.canUseFeature` now gates Support-Diagnose Share through `MonetizedFeature.supportDiagnostics`. Without Navigator/Fleet, the dialog explains the lock and can route to `Abo & Karten`, but no JSON report is written and no Android Sharesheet is opened.
 
 ## Support Diagnostics Truth
 
 - `SupportDiagnosticsBuilder.build` summarizes app version, Android SDK, creation time, privacy mode, boot autostart, simulation, NMEA protocol/host/port, page count, widget count, redacted active route/MOB marker state, detected source count and safe crash-report inventory metadata.
-- User-facing support diagnostics are a consent-gated share action, not telemetry. The app should create the report only after a visible consent dialog and hand it to the Android Sharesheet through FileProvider.
+- User-facing support diagnostics are a Navigator/Fleet entitlement- and consent-gated share action, not telemetry. The app should create the report only after a valid `supportDiagnostics` entitlement and a visible consent dialog, then hand it to the Android Sharesheet through FileProvider.
 - The shared artifact should live in app cache and be exposed as a `content://` URI. It must not depend on a durable public export directory or a `file://` URI.
 - Public/default shares use redaction. Router host, MMSI, route details and MOB data are sensitive and must not be exposed by default; `includeSensitive = true` is not the public-share default.
 - Crash diagnostics in the support JSON are intentionally metadata-only: report count and latest crash timestamp are allowed; stacktraces, throwable messages and crash file contents stay in private app files.

@@ -173,6 +173,7 @@ import com.seafox.nmea_dashboard.data.BillingRuntimeRestoreApplier
 import com.seafox.nmea_dashboard.data.BillingValidationDecision
 import com.seafox.nmea_dashboard.data.BillingValidationHttpClient
 import com.seafox.nmea_dashboard.data.EntitlementSnapshot
+import com.seafox.nmea_dashboard.data.MonetizedFeature
 import com.seafox.nmea_dashboard.data.RuntimeEntitlementGate
 import com.seafox.nmea_dashboard.data.NmeaSourceProfile
 import com.seafox.nmea_dashboard.data.NmeaPgnHistoryEntry
@@ -5812,6 +5813,11 @@ private fun DashboardTopBar(
         .heightIn(min = compactMenuItemHeight)
     val selectedPageIndex = state.selectedPage.coerceIn(0, state.pages.lastIndex.coerceAtLeast(0))
     val selectedPageTitle = state.pages.getOrNull(selectedPageIndex)?.name ?: "Keine Seite"
+    val supportDiagnosticsDecision = RuntimeEntitlementGate.canUseFeature(
+        snapshot = state.entitlementSnapshot,
+        feature = MonetizedFeature.supportDiagnostics,
+    )
+    val supportDiagnosticsAllowed = supportDiagnosticsDecision.allowed
 
     Row(
         modifier = Modifier
@@ -6859,23 +6865,42 @@ private fun DashboardTopBar(
         CompactMenuDialog(
             onDismissRequest = { showSupportDiagnosticsDialog = false },
             isDarkMenu = darkBackground,
-            title = { Text("Support-Diagnose teilen", style = menuTitleStyle) },
+            title = {
+                Text(
+                    if (supportDiagnosticsAllowed) "Support-Diagnose teilen" else "Support-Diagnose gesperrt",
+                    style = menuTitleStyle,
+                )
+            },
             text = {
                 CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
                     ProvideTextStyle(value = menuTextStyle) {
                         Column(verticalArrangement = Arrangement.spacedBy(MENU_SPACING)) {
-                            Text(
-                                "seaFOX erstellt einen lokalen JSON-Diagnosebericht im privaten Cache und öffnet danach das Android-Teilen-Menü.",
-                                style = menuTextStyle,
-                            )
-                            Text(
-                                "Standardmäßig redigiert: Router-Host sowie sensible Bootsdaten wie MMSI, Route und MOB werden nicht offengelegt.",
-                                style = menuTextStyle.copy(color = menuMutedColor),
-                            )
-                            Text(
-                                "Teile den Bericht nur bewusst mit Support oder Entwicklung. Es wird nichts automatisch hochgeladen.",
-                                style = menuTextStyle.copy(color = menuMutedColor),
-                            )
+                            if (supportDiagnosticsAllowed) {
+                                Text(
+                                    "seaFOX erstellt einen lokalen JSON-Diagnosebericht im privaten Cache und öffnet danach das Android-Teilen-Menü.",
+                                    style = menuTextStyle,
+                                )
+                                Text(
+                                    "Standardmäßig redigiert: Router-Host sowie sensible Bootsdaten wie MMSI, Route und MOB werden nicht offengelegt.",
+                                    style = menuTextStyle.copy(color = menuMutedColor),
+                                )
+                                Text(
+                                    "Teile den Bericht nur bewusst mit Support oder Entwicklung. Es wird nichts automatisch hochgeladen.",
+                                    style = menuTextStyle.copy(color = menuMutedColor),
+                                )
+                            } else {
+                                Text(
+                                    RuntimeEntitlementGate.denialMessage(
+                                        MonetizedFeature.supportDiagnostics,
+                                        supportDiagnosticsDecision,
+                                    ),
+                                    style = menuTextStyle,
+                                )
+                                Text(
+                                    "Es wird kein Diagnosebericht erzeugt und kein Sharesheet geöffnet, solange diese App-Funktion nicht freigeschaltet ist.",
+                                    style = menuTextStyle.copy(color = menuMutedColor),
+                                )
+                            }
                             supportDiagnosticsStatus?.let { status ->
                                 HorizontalDivider()
                                 Text(status, style = menuTextStyle)
@@ -6886,20 +6911,30 @@ private fun DashboardTopBar(
             },
             confirmButton = {
                 CompactMenuTextButton(
-                    text = "Redigierten Bericht teilen",
+                    text = if (supportDiagnosticsAllowed) "Redigierten Bericht teilen" else "Abo & Karten öffnen",
                     style = menuTextStyle,
                     fillWidth = false,
                     onClick = {
-                        val result = onShareSupportDiagnostics()
-                        supportDiagnosticsStatus = result.fold(
-                            onSuccess = {
-                                showSupportDiagnosticsDialog = false
-                                null
-                            },
-                            onFailure = { error ->
-                                "Diagnose konnte nicht geteilt werden: ${error.message ?: error::class.java.simpleName}"
-                            },
-                        )
+                        if (supportDiagnosticsAllowed) {
+                            val result = onShareSupportDiagnostics()
+                            supportDiagnosticsStatus = result.fold(
+                                onSuccess = {
+                                    showSupportDiagnosticsDialog = false
+                                    null
+                                },
+                                onFailure = { error ->
+                                    "Diagnose konnte nicht geteilt werden: ${error.message ?: error::class.java.simpleName}"
+                                },
+                            )
+                        } else {
+                            billingRestoreStatus = RuntimeEntitlementGate.denialMessage(
+                                MonetizedFeature.supportDiagnostics,
+                                supportDiagnosticsDecision,
+                            )
+                            supportDiagnosticsStatus = null
+                            showSupportDiagnosticsDialog = false
+                            showBillingDialog = true
+                        }
                     }
                 )
             },

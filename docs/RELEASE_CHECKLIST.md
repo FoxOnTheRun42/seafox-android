@@ -58,6 +58,7 @@ Wichtig: `assemble`, `bundle`, `install` und `package` erhoehen die Buildnummer 
 - Bestehendes Premium-Widget mit Free/abgelaufenem Snapshot pruefen: Card bleibt verschiebbar/loeschbar, zeigt Lock-Placeholder und fuehrt keine Premium-Funktion aus.
 - NMEA-Router nicht erreichbar.
 - Support-Diagnose-Share oeffnen: Consent-Dialog pruefen, Share abbrechen und Share fortsetzen.
+- Support-Diagnose mit Free/Pro-Snapshot pruefen: kein Bericht wird erzeugt, kein Sharesheet wird geoeffnet, Dialog verweist auf Abo & Karten.
 - Geteilte Diagnose-JSON ueber `content://`-FileProvider aus App-Cache pruefen; keine `file://`-URI und keine dauerhafte oeffentliche Backup-Datei.
 - Inhalt auf Default-Redaction fuer Router-Host, MMSI, aktive Route und MOB pruefen; sensible Felder duerfen nicht Default fuer oeffentliche Shares sein.
 - Crash-Metadaten im Diagnosebericht pruefen: erlaubt sind Anzahl und letzter Crash-Zeitpunkt; Stacktraces, Exception-Messages und Crash-Dateiinhalte bleiben privat.

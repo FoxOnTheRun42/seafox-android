@@ -74,6 +74,21 @@ class RuntimeEntitlementGateTest {
     }
 
     @Test
+    fun supportDiagnosticsFeatureRequiresNavigatorTier() {
+        val free = EntitlementSnapshot(tier = SubscriptionTier.FREE)
+        val navigator = EntitlementSnapshot(tier = SubscriptionTier.NAVIGATOR)
+
+        val denied = RuntimeEntitlementGate.canUseFeature(free, MonetizedFeature.supportDiagnostics)
+        val allowed = RuntimeEntitlementGate.canUseFeature(navigator, MonetizedFeature.supportDiagnostics)
+
+        assertFalse(denied.allowed)
+        assertEquals(MonetizedFeature.supportDiagnostics, denied.requiredFeature)
+        assertEquals(SubscriptionTier.NAVIGATOR, denied.requiredTier)
+        assertTrue(RuntimeEntitlementGate.denialMessage(MonetizedFeature.supportDiagnostics, denied).contains("Navigator"))
+        assertTrue(allowed.allowed)
+    }
+
+    @Test
     fun expiredEntitlementProducesExpiredDecision() {
         val expired = EntitlementSnapshot(
             tier = SubscriptionTier.FLEET,

@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Support diagnostics entitlement gate
+
+- Sources: `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/main/java/com/boat/dashboard/data/RuntimeEntitlementGate.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/RuntimeEntitlementGateTest.kt`, `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/RELEASE_CHECKLIST.md`
+- Updated: `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/RELEASE_CHECKLIST.md`, `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`, `wiki/log.md`
+- Notes: Support-Diagnose-Share ist jetzt an `MonetizedFeature.supportDiagnostics` gebunden. Ohne Navigator/Fleet erklaert der Dialog den Lock und kann zu `Abo & Karten` fuehren, erzeugt aber keinen JSON-Bericht und oeffnet kein Sharesheet. Gezielter Compile plus `RuntimeEntitlementGateTest` war gruen; das volle `./scripts/seafox-product-check.sh --ci --release-r8` war ebenfalls gruen. Device-/Sharesheet-QA bleibt offen.
+
 ## [2026-04-24] implementation | Runtime premium widget render lock
 
 - Sources: `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/main/java/com/boat/dashboard/data/RuntimeEntitlementGate.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/RuntimeEntitlementGateTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/FeatureAccessPolicyTest.kt`, `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/RELEASE_CHECKLIST.md`
