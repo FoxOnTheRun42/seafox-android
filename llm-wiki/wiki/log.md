@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Billing validation JSON contract
+
+- Sources: `../app/src/main/java/com/boat/dashboard/data/BillingValidationJson.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/BillingValidationJsonTest.kt`, `../docs/BILLING_BACKEND_CONTRACT.md`
+- Updated: `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`, `wiki/log.md`
+- Notes: Backend-Validation-Antworten werden defensiv in `BillingValidationDecision`s geparst: `verified`, `rejected`, sonst `unverified`; unbekannte Statuswerte schalten nichts frei. Serialisierung echoed keine Purchase Tokens. Weiterhin kein echter HTTP-Client oder Play-Console-Setup.
+
 ## [2026-04-24] implementation | Play Billing purchase mapper
 
 - Sources: `../app/src/main/java/com/boat/dashboard/data/PlayBillingPurchaseMapper.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/PlayBillingPurchaseMapperTest.kt`, `../docs/BILLING_BACKEND_CONTRACT.md`

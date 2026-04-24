@@ -103,6 +103,7 @@ Aus `README.md`:
 - `BillingCatalog` normalizes product lookup by trim/lowercase and exposes `activeProducts()`, `tierForProductId()`, `chartPackForProductId()`, `chartProviderForProductId()`, `activeSubscriptionProductIds()` and `activeInAppProductIds()`.
 - `PlayBillingClientGateway` uses Google Play Billing for subscription restore, one-time in-app-product restore and acknowledge paths.
 - `PlayBillingPurchaseMapper` converts real Play `Purchase` objects to internal `BillingPurchaseRecord`s and defaults them to `unverified`; backend validation must upgrade them explicitly.
+- `BillingValidationJson` parses backend responses into token decisions and defaults unknown status values to `unverified`; serialized decisions do not echo purchase tokens.
 - `BillingRestoreCoordinator` is the pure client seam between Play Restore and a future backend validator: it creates `BillingValidationRequest`s, treats missing backend decisions as `unverified`, merges verified/rejected decisions back into purchase records and then calls `BillingEntitlementMapper`.
 - `BillingEntitlementMapper` grants tiers only from verified `purchased` records; pending, unverified and rejected purchases do not grant access.
 - `BillingEntitlementMapper` grants first-party chart-pack ownership only from verified `purchased` records; pending, unverified and rejected pack purchases do not grant ownership.
