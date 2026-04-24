@@ -11,6 +11,7 @@ Ziel: App-Abos duerfen erst nach Servervalidierung als Entitlement gelten. Karte
 - `purchaseToken`: Google-Play-Kauftoken
 - `purchaseState`: `purchased`, `pending` oder `unspecified`
 - `acknowledged`: Client-Status aus Play Billing
+- Produktarten: App-Stufen laufen als Play `SUBS`; first-party Kartenpakete wie `seafox.chartpack.de_coast` laufen als Play `INAPP`.
 
 ## Server-Verifikation
 
@@ -23,6 +24,7 @@ Empfohlene Antwort:
   "verificationStatus": "verified",
   "tier": "NAVIGATOR",
   "validUntilEpochMs": 1770000000000,
+  "ownedChartPackIds": ["seafox-premium-de-coast"],
   "licensedChartProviderIds": []
 }
 ```
@@ -33,4 +35,5 @@ Empfohlene Antwort:
 - `rejected` wird geloggt, aber nicht freigeschaltet.
 - Unacknowledged Tokens werden an den Billing-Gateway-Acknowledge-Pfad gemeldet.
 - App-Abo-Tiers duerfen niemals C-Map/S-63-Kartenlizenzen implizit freischalten.
+- First-party Kartenpakete duerfen nur `ownedChartPackIds` setzen; sie schalten keine App-Stufe und keine externen Kartenprovider frei.
 - C-Map/S-63 bleiben externe, inaktive Platzhalter bis Vertrag, Zertifikate, Permit-Handling und Entitlement-Abrechnung stehen.

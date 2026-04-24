@@ -16,6 +16,7 @@ sources:
   - ../../../app/src/main/java/com/boat/dashboard/data/BillingCatalog.kt
   - ../../../app/src/main/java/com/boat/dashboard/data/BillingEntitlementMapper.kt
   - ../../../app/src/main/java/com/boat/dashboard/data/PlayBillingClientGateway.kt
+  - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FirstPartyChartPackages.kt
   - ../../../app/src/main/java/com/boat/dashboard/CrashReporting.kt
   - ../../../app/src/main/java/com/boat/dashboard/data/SupportDiagnostics.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/BillingCatalogTest.kt
@@ -52,6 +53,7 @@ Quelle: `runs/20260424-095641-ceo-sync/brief.md`, danach im Wiki-Refresh erneut 
 - `app/build.gradle.kts` aktiviert im Release-Build `isMinifyEnabled = true` und `isShrinkResources = true`; Release-Signing wird nur gesetzt, wenn alle `SEAFOX_RELEASE_*`-Umgebungsvariablen vorhanden sind.
 - `adb` ist lokal nicht installiert. Deshalb wurde keine Emulator- oder Device-QA ausgefuehrt; `--device` waere in dieser Umgebung blockiert.
 - Nach der Produktionshaertung wurde `./scripts/seafox-product-check.sh --ci --release-r8` lokal ausgefuehrt und bestand Compile, JVM-Tests, Lint und `:app:minifyReleaseWithR8`. Ein signiertes Store-Artefakt wurde dadurch nicht erzeugt.
+- Nach Chart Roadmap Task 03 wurde ein gezielter JVM-Check fuer Billing-Katalog, Billing-Restore-Mapping, Entitlement-Policy und First-Party-Chart-Pack-Status gruen ausgefuehrt.
 - Nach Chart Roadmap Task 01 wurde der gezielte JVM-Provider-Check gruen ausgefuehrt: `./gradlew :app:testDebugUnitTest --tests '*ChartProviderRegistryTest' --tests '*FreeRasterChartProvidersTest' --tests '*SeaChartWidgetSettingsModuleTest'`.
 - Nach Chart Roadmap Task 01 wurde auch das volle lokale Product Gate mit Release-R8 gruen ausgefuehrt: `./scripts/seafox-product-check.sh --ci --release-r8`. `adb` fehlt weiterhin, deshalb wurde keine Emulator-/Device-QA ausgefuehrt.
 - Nach dem ersten Task-02-Schnitt wurde gezielt `./gradlew :app:compileDebugKotlin :app:testDebugUnitTest --tests '*SeaChartSideLoadPackagesTest'` gruen ausgefuehrt. Das beweist Dateivertraege und Compile, aber noch keinen echten Android-Dateiauswahl- oder Render-Screenshot.
@@ -82,15 +84,16 @@ Vorhanden in `app/src/test` am 2026-04-24:
 - `AutopilotSafetyGateTest`: blockiert nicht bewaffnete, unbestaetigte, Broadcast-Host- und abgelaufene Dispatches; bestaetigte explizite Gateway-Hosts werden akzeptiert.
 - `BackupPrivacyPolicyTest`: private Backups und sensitive Keys wie MMSI, Route, MOB und Router-Host.
 - `BootAutostartPolicyTest`: Boot, Locked-Boot, User-Unlocked und interner Delayed Launch respektieren den gespeicherten Opt-in.
-- `BillingCatalogTest`: eindeutige Produkt-IDs, aktive Pro-/Navigator-/Fleet-App-Subscription-Produkte, case-/whitespace-tolerantes Lookup und inaktive C-MAP/S-63-Chart-Placeholder ohne Tier- oder Lizenzfreigabe.
-- `BillingEntitlementMapperTest`: Restore-Mapping gewaehrt nur verifizierte `purchased` App-Abos, blockiert pending/unverified/rejected und sammelt unacknowledged Tokens.
+- `BillingCatalogTest`: eindeutige Produkt-IDs, aktive Pro-/Navigator-/Fleet-App-Subscription-Produkte, aktives first-party Play-`INAPP`-Chart-Pack, case-/whitespace-tolerantes Lookup und inaktive C-MAP/S-63-Chart-Placeholder ohne Tier- oder Lizenzfreigabe.
+- `BillingEntitlementMapperTest`: Restore-Mapping gewaehrt nur verifizierte `purchased` App-Abos und first-party Chart-Packs, blockiert pending/unverified/rejected und sammelt unacknowledged Tokens.
 - `CrashReportFormatterTest`: lokales Crash-Report-Format mit stabilen Feldern und sicheren Defaults.
-- `EntitlementPolicyTest`: Free/Pro/Navigator/Fleet-Featurelogik, getrennte Chart-Provider-Lizenzen und Ablaufdatum.
-- `FeatureAccessPolicyTest`: Widgets und Premiumfunktionen werden Free/Pro/Navigator/Fleet-Features zugeordnet.
+- `EntitlementPolicyTest`: Free/Pro/Navigator/Fleet-Featurelogik, getrennte first-party Chart-Pack-Entitlements, getrennte Chart-Provider-Lizenzen und Ablaufdatum.
+- `FeatureAccessPolicyTest`: Widgets und Premiumfunktionen werden Free/Pro/Navigator/Fleet-Features zugeordnet; first-party Chart-Packs schalten keine App-Features frei.
 - `SupportDiagnosticsBuilderTest`: Redaction, optionale sensitive Felder, stabile JSON-Felder, Seiten-/Widget-/Safety-Zusammenfassung und JSON-Datei-Export in ein bereitgestelltes Verzeichnis. Ein user-facing Share-/Export-Flow ist damit noch nicht bewiesen.
 - `ChartProviderRegistryTest`: NOAA/QMAP DE/S-57/OpenSeaCharts als selektierbar oder beta, C-MAP lizenzpflichtig, S-63 nicht implementiert.
 - `FreeRasterChartProvidersTest`: QMAP-DE-Tilevertrag, OpenSeaCharts mit OSM-Fallback plus erzwungenem Seamark-Overlay und kein Free-Raster-Override fuer NOAA.
 - `SeaChartSideLoadPackagesTest`: erlaubte MBTiles/GeoPackage-Dateiendungen sowie stabile Sideload-Datei- und Ordnernamen.
+- `FirstPartyChartPackagesTest`: `seafox-premium-de-coast` ist ohne Entitlement lizenzpflichtig, mit Entitlement lizenziert aber ohne lokale Datei unvollstaendig, mit lokaler Datei ein valider Raster-MBTiles-Kandidat und bei Ablauf expired.
 - `SeaChartWidgetSettingsModuleTest`: persistierte Provider-Normalisierung inklusive legacy QMAP, OSM und JSON-Parsing mit echter JVM-JSON-Bibliothek.
 - `SafetyContourPolicyTest`: Safety-Depth-Berechnung und Filterung von DEPARE, DEPCNT und SOUNDG.
 - `HazardOverlayBuilderTest`: DEPARE/DEPCNT/SOUNDG-Fixtures, `kind`-Fallback, Tiefenalias-Felder, `DRVAL2`-Fallback und Non-Depth/invalid-depth-Ablehnung.
@@ -131,7 +134,7 @@ Empfohlene Stufen:
 - Navigator: erweiterte Kartenpakete, Safety-Contour, erweiterte Alarme, Export/Import, Bootprofile.
 - Fleet/Commercial: mehrere Boote, Support, Diagnosepakete, MDM-/Tablet-Setup, Lizenzverwaltung.
 
-Kartenlizenzen sind getrennt von App-Feature-Entitlements zu behandeln. Der aktuelle Stand ist Domain-/Gatewaylogik mit JVM-Tests: `BillingCatalog.kt` kennt aktive App-Abo-Produkt-IDs fuer Pro, Navigator und Fleet (`seafox.pro.monthly/yearly`, `seafox.navigator.monthly/yearly`, `seafox.fleet.monthly/yearly`), waehrend `seafox.chart.cmap.external` und `seafox.chart.s63.external` nur inaktive externe Chart-License-Placeholder sind. `PlayBillingClientGateway.kt` bindet die Play Billing Library fuer App-Subscription-Restore und Acknowledge an. `BillingEntitlementMapper.kt` gewaehrt Entitlements nur fuer verifizierte `purchased` Records und markiert unacknowledged Tokens. `FeatureAccessPolicy.kt` mappt Widgets und Premiumfunktionen auf benoetigte App-Features. Play-Console-Produkte, Kauf-UI, Trial-Regeln, Server-/Receipt-Pruefung, UI-Freischaltung und harte Runtime-Enforcement-Pfade sind noch offen. C-MAP/S-63 duerfen bis zur geklaerten Lizenz-, Zertifikats-, Permit- und Provider-Integration nicht als kaufbare oder freigeschaltete Verkaufsfeatures behandelt werden.
+Kartenlizenzen sind getrennt von App-Feature-Entitlements zu behandeln. Der aktuelle Stand ist Domain-/Gatewaylogik mit JVM-Tests: `BillingCatalog.kt` kennt aktive App-Abo-Produkt-IDs fuer Pro, Navigator und Fleet (`seafox.pro.monthly/yearly`, `seafox.navigator.monthly/yearly`, `seafox.fleet.monthly/yearly`) sowie ein first-party Play-`INAPP` fuer `seafox-premium-de-coast` (`seafox.chartpack.de_coast`). `seafox.chart.cmap.external` und `seafox.chart.s63.external` bleiben inaktive externe Chart-License-Placeholder. `PlayBillingClientGateway.kt` kann aktive Subscriptions und One-Time-In-App-Produkte fuer Restore abfragen und Purchases acknowledgen. `BillingEntitlementMapper.kt` gewaehrt Entitlements nur fuer verifizierte `purchased` Records und markiert unacknowledged Tokens. First-party Kartenpakete setzen nur `ownedChartPackIds`, keine App-Stufe und keine externen Provider-Lizenzen. `FeatureAccessPolicy.kt` mappt Widgets und Premiumfunktionen auf benoetigte App-Features. Play-Console-Produkte, Kauf-UI, Trial-Regeln, Server-/Receipt-Pruefung, UI-Freischaltung, Premium-Pack-Auslieferung und harte Runtime-Enforcement-Pfade sind noch offen. C-MAP/S-63 duerfen bis zur geklaerten Lizenz-, Zertifikats-, Permit- und Provider-Integration nicht als kaufbare oder freigeschaltete Verkaufsfeatures behandelt werden.
 
 ## Privacy and Safety Drafts
 

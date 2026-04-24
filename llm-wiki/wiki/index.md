@@ -49,7 +49,7 @@ Dies ist der Einstieg in das LLM-gepflegte Projektwissen fuer seaFOX. Lies diese
 - MBTiles/GeoPackage-Sideloading: [[modules/chart-system]]
 - Widgets/UI/Assets: [[modules/dashboard-and-widgets]]
 - NMEA/AIS/Autopilot/Privacy/Boot-Autostart: [[modules/data-ingestion-and-safety]]
-- BillingCatalog/Monetarisierung/Release: [[modules/production-and-qa]] und [[modules/data-ingestion-and-safety]]
+- BillingCatalog/Premium-Chart-Pack/Monetarisierung/Release: [[modules/production-and-qa]] und [[modules/data-ingestion-and-safety]]
 - SupportDiagnostics JSON/File Export: [[modules/data-ingestion-and-safety]]
 - Boot-Autostart/Billing/Support-Diagnostics-Risiken: [[modules/data-ingestion-and-safety]]
 - Store-/Privacy-/Safety-Drafts: [[modules/production-and-qa]]

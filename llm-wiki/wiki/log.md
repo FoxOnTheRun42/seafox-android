@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Chart Roadmap Task 03 premium pack start
+
+- Sources: `../app/src/main/java/com/boat/dashboard/data/BillingCatalog.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingEntitlementMapper.kt`, `../app/src/main/java/com/boat/dashboard/data/EntitlementModels.kt`, `../app/src/main/java/com/boat/dashboard/data/PlayBillingClientGateway.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FirstPartyChartPackages.kt`, `../docs/BILLING_BACKEND_CONTRACT.md`
+- Updated: `wiki/modules/chart-system.md`, `wiki/modules/production-and-qa.md`, `wiki/modules/data-ingestion-and-safety.md`, `wiki/open-questions.md`, `wiki/log.md`
+- Notes: Task 03 als Billing-/Entitlement-Fundament umgesetzt: `seafox.chartpack.de_coast` ist ein first-party Play-`INAPP`, setzt nur `ownedChartPackIds = ["seafox-premium-de-coast"]`, Query-Restore kann Subscriptions und In-App-Produkte zusammenfuehren, und `FirstPartyChartPackages` markiert gekaufte Pakete ohne lokale Datei weiterhin als `incomplete`. C-Map/S-63 bleiben inaktive externe Platzhalter. Gezielter JVM-Check war gruen; Play-Console, Kauf-UI, Backend-Verifikation und Paket-Auslieferung fehlen weiterhin.
+
 ## [2026-04-24] implementation | Chart Roadmap Task 02 sideload start
 
 - Sources: `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/SeaChartSideLoadPackages.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/OfflineTileManager.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartWidget.kt`, `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/SeaChartSideLoadPackagesTest.kt`

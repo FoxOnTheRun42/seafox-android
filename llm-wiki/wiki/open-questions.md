@@ -34,7 +34,7 @@ sources:
 
 ## Charts / Navigation
 
-- Welche Kartenquelle wird nach Task 02 als naechster Offline-Schritt priorisiert? Aktuelle Entscheidung: Raster-MBTiles-Sideloading ist angebunden; GeoPackage/Vector-MBTiles sind importierbar, aber noch nicht renderbar.
+- Welche Kartenquelle wird nach Task 03 als naechster Offline-Schritt priorisiert? Aktuelle Entscheidung: Raster-MBTiles-Sideloading ist angebunden; das erste first-party Premium-Pack ist als Billing-/Statusvertrag modelliert; GeoPackage/Vector-MBTiles sind importierbar, aber noch nicht renderbar.
 - Wird GeoPackage zuerst ueber lokalen Tile-Adapter gerendert, beim Import nach MBTiles konvertiert oder bis zur konkreten Provider-Registry verschoben?
 - Welche kleine, rechtlich saubere Raster-MBTiles-Fixture darf fuer Emulator-/Screenshot-Tests im Repo liegen?
 - Wie stark soll S-52-nahe Symbolisierung vor der ersten Beta sein?
@@ -48,12 +48,13 @@ sources:
 - Welche Teile von `MainActivity.kt` werden zuerst extrahiert, um Aenderungsrisiko zu senken?
 - Soll groessere Persistenz fuer Tracks, Routen und Kartenpakete ueber Room/SQLite erfolgen?
 - Welche UI-State-Grenzen braucht ein robuster Fullscreen-Chart-Modus?
-- Wo greifen `EntitlementPolicy` und `BillingCatalog` nach Play-Billing-Anbindung in App-State und UI-Freischaltung?
+- Wo greifen `EntitlementPolicy`, `BillingCatalog` und `FirstPartyChartPackages` nach Play-Billing-Anbindung in App-State, UI-Freischaltung und Premium-Pack-Auslieferung?
 - Welche konkrete Klasse wird erster echter `ChartProvider` statt Registry-/Skeleton-Arbeit?
 
 ## Business / Licensing
 
 - Welche App-Features werden verkauft, ohne Kartenanbieter-Lizenzen zu beruehren?
+- Welche first-party Premium-Kartenpakete duerfen rechtlich verkauft und ausgeliefert werden, und wie werden ihre MBTiles/Assets signiert, versioniert und aktualisiert?
 - Welche Provider-IDs gelten als getrennt lizenzierte Module?
 - Gibt es eine klare Strategie fuer S-63, C-MAP oder Navionics, bevor sie in UI/Marketing auftauchen?
 - Wie bleiben inaktive C-MAP/S-63-Billing-Platzhalter unsichtbar, bis Vertrage, Zertifikate, Permit-Handling und Entitlements stehen?

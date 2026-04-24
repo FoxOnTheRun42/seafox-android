@@ -64,8 +64,40 @@ class BillingEntitlementMapperTest {
             listOf(purchase("seafox.chart.cmap.external")),
         )
 
+        assertEquals(emptySet<String>(), result.entitlementSnapshot.ownedChartPackIds)
         assertEquals(emptySet<String>(), result.entitlementSnapshot.licensedChartProviderIds)
         assertEquals(SubscriptionTier.FREE, result.entitlementSnapshot.tier)
+    }
+
+    @Test
+    fun verifiedPurchasedPremiumChartPackRestoresOnlyOwnedChartPack() {
+        val result = BillingEntitlementMapper.restoreFromPurchases(
+            listOf(purchase(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PRODUCT_ID, token = "chart-pack-token")),
+        )
+
+        assertEquals(SubscriptionTier.FREE, result.entitlementSnapshot.tier)
+        assertEquals(
+            setOf(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PACK_ID),
+            result.entitlementSnapshot.ownedChartPackIds,
+        )
+        assertEquals(emptySet<String>(), result.entitlementSnapshot.licensedChartProviderIds)
+        assertTrue("chart-pack-token" in result.unacknowledgedPurchaseTokens)
+    }
+
+    @Test
+    fun unverifiedPremiumChartPackDoesNotGrantOwnedChartPack() {
+        val result = BillingEntitlementMapper.restoreFromPurchases(
+            listOf(
+                purchase(
+                    BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PRODUCT_ID,
+                    verification = PurchaseVerificationStatus.unverified,
+                ),
+            ),
+        )
+
+        assertEquals(emptySet<String>(), result.entitlementSnapshot.ownedChartPackIds)
+        assertEquals(SubscriptionTier.FREE, result.entitlementSnapshot.tier)
+        assertTrue(result.needsBackendVerification)
     }
 
     @Test

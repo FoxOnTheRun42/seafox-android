@@ -28,6 +28,7 @@ seaFOX ist ein fortgeschrittener Alpha-Prototyp mit ernstzunehmendem Kern:
 - Erststart-Onboarding, Fullscreen-Chart und Datenschutz-/Bootmodus-Einstellungen sind als Produkt-Shell vorhanden.
 - Entitlement-Domainlogik trennt App-Stufen von Kartenlizenzen, bevor Play Billing angeschlossen wird.
 - Billing-Katalog fuer `Pro`, `Navigator` und `Fleet` ist vorbereitet; C-Map/S-63 sind inaktive externe Platzhalter ohne Rechtefreischaltung.
+- Ein erstes eigenes seaFOX Premium-Kartenpaket (`seafox.chartpack.de_coast`) ist als aktives Play-`INAPP`-Produkt modelliert. Es erzeugt nur `ownedChartPackIds`, keine App-Stufe und keine externen Kartenprovider-Lizenzen.
 - Feature-Access-Policy ordnet Widgets und Kernfunktionen testbar `Free`, `Pro`, `Navigator` und `Fleet` zu, ohne Kartenlizenzen mit App-Abos zu vermischen.
 - Play Billing Library ist als App-Subscription-Gateway vorbereitet; Restore-Mapping gewaehrt Entitlements erst nach verifiziertem Kaufstatus und markiert unacknowledged Tokens.
 - Support-Diagnoseberichte koennen sensible Router-/Bootsdaten standardmaessig redigieren und als JSON-Datei exportieren.
@@ -91,7 +92,7 @@ Empfohlene Stufen:
 
 Wichtig: Kostenpflichtige Kartenanbieter nicht mit App-Abo verwechseln. App-Features koennen abgerechnet werden, Kartenlizenzen brauchen getrennte Rechte und Preismodelle.
 
-Aktueller Implementierungsstand: Die Entitlement-Policy existiert als getestete Domainlogik fuer `Free`, `Pro`, `Navigator` und `Fleet`. Ein Billing-Katalog definiert aktive App-Abo-Produkt-IDs und inaktive externe Kartenlizenz-Platzhalter. Eine Feature-Access-Policy mappt Widgets/Funktionen auf die benoetigten App-Features. Das Play-Billing-SDK ist angebunden und ein Gateway kann App-Abos wiederherstellen/acknowledgen; der Restore-Mapper schaltet nur verifizierte `PURCHASED`-Records frei. Kauf-UI, Play-Console-Produkte, Trial-Regeln, Backend-Receipt-Validierung, UI-Freischaltung und harte Runtime-Enforcement-Callsites sind noch offen. Kartenanbieter werden nur ueber separate lizenzierte Provider-IDs freigeschaltet, nicht automatisch ueber eine App-Stufe.
+Aktueller Implementierungsstand: Die Entitlement-Policy existiert als getestete Domainlogik fuer `Free`, `Pro`, `Navigator` und `Fleet`. Ein Billing-Katalog definiert aktive App-Abo-Produkt-IDs, ein aktives first-party Premium-Kartenpaket als Play-`INAPP` und inaktive externe Kartenlizenz-Platzhalter. Eine Feature-Access-Policy mappt Widgets/Funktionen auf die benoetigten App-Features. Das Play-Billing-SDK ist angebunden und ein Gateway kann App-Abos sowie One-Time-In-App-Produkte wiederherstellen/acknowledgen; der Restore-Mapper schaltet nur verifizierte `PURCHASED`-Records frei. Kauf-UI, Play-Console-Produkte, Trial-Regeln, Backend-Receipt-Validierung, UI-Freischaltung, Premium-Pack-Downloadauslieferung und harte Runtime-Enforcement-Callsites sind noch offen. Kartenanbieter werden nur ueber separate lizenzierte Provider-IDs freigeschaltet, nicht automatisch ueber eine App-Stufe.
 
 ## Release-Gates
 

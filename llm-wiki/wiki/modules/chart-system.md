@@ -15,6 +15,7 @@ sources:
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartProviderRegistry.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FreeRasterChartProviders.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/SeaChartSideLoadPackages.kt
+  - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FirstPartyChartPackages.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/OpenSeaMapOverlay.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/RouteOverlayBuilder.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/widgets/chart/NauticalOverlay.kt
@@ -33,6 +34,8 @@ Chart Roadmap Task 01 ist umgesetzt: QMAP DE ist als freie Online-Raster-Beta an
 
 Chart Roadmap Task 02 ist teilweise produktiv umgesetzt: Raster-MBTiles koennen per Android-Dateiauswahl sideloaded, validiert, app-intern gespeichert und offline gerendert werden. Vector-MBTiles und GeoPackage werden validiert/gespeichert, aber bewusst als noch nicht renderbar markiert.
 
+Chart Roadmap Task 03 ist als Domain-/Restore-Grundlage gestartet: Ein eigenes seaFOX Premium-Pack `seafox-premium-de-coast` wird ueber das Play-`INAPP`-Produkt `seafox.chartpack.de_coast` modelliert. Verifizierte Kaeufe setzen `ownedChartPackIds`; ohne lokale Paketdatei bleibt der Offline-Paketstatus bewusst `incomplete`. C-Map und S-63 bleiben davon getrennte externe Platzhalter.
+
 Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour ist aktuell ein Contract-/Placeholder-Pfad plus Depth-Filter-Policy, keine bewiesene echte ENC-Contour-Visualisierung aus realen DEPARE/DEPCNT/SOUNDG-Zellen.
 
 ## Key Files
@@ -49,6 +52,7 @@ Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour 
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/OpenSeaMapOverlay.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/FreeRasterChartProviders.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/SeaChartSideLoadPackages.kt`
+- `app/src/main/java/com/boat/dashboard/ui/widgets/chart/FirstPartyChartPackages.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartProvider.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartProviderRegistry.kt`
 - `app/src/main/java/com/boat/dashboard/ui/widgets/chart/OfflineTileManager.kt`
@@ -60,6 +64,7 @@ Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour 
 - `NauticalOverlay` scans `.000` ENC files, optionally uses `CATALOG.031` and camera/zoom bounds to prefer cells, converts selected S-57 files through `S57ToGeoJson`, and applies MapLibre layers for land, depth areas, depth contours, buoys, beacons, lights, obstructions, soundings, restricted areas and infrastructure.
 - `FreeRasterChartProviders` bridges the first free online raster providers into the MapLibre runtime: QMAP DE uses `https://freenauticalchart.net/qmap-de/{z}/{x}/{y}.png`; `OPEN_SEA_CHARTS` gets an OSM standard raster fallback plus forced seamark overlay; NOAA/S-57/S-63/C-Map do not get this raster override.
 - `SeaChartSideLoadPackages` validates local `.mbtiles`, `.gpkg` and `.geopackage` files. Raster-MBTiles are renderable now; Vector-MBTiles and GeoPackage are accepted as imported packages but not rendered yet.
+- `FirstPartyChartPackages` describes the first seaFOX-owned premium pack as a raster-MBTiles offline package. Entitlement changes only its license status; actual render readiness still requires a local package path.
 - The chart download dialog has a local import action using Android `OpenDocument`; imported packages are copied into the selected provider's app-specific `seaCHART/<provider>/sideload_*` folder before rendering or status display.
 - `ChartWidget` now prefers the selected active MBTiles source over the global first-found MBTiles and removes the free online raster basemap when a local MBTiles package is active.
 - `OpenSeaMapOverlay` is implemented as an idempotent raster seamark overlay using `https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png`; selecting `OPEN_SEA_CHARTS` forces that overlay path and does not load a local ENC path.
@@ -79,6 +84,7 @@ Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour 
 - Route/MOB/Laylines: builders and main chart wiring exist. Release confidence still requires user-flow proof for route creation/selection, MOB trigger/clear behavior on device, and laylines with a reliable true-wind source.
 - S-57/S-52: S-57 parsing/rendering exists, but styling is not S-52/ECDIS compliant. Product copy must avoid official-navigation claims.
 - Offline/format breadth: Raster-MBTiles sideloading exists. Vector MBTiles/PBF, GeoPackage rendering, tile-directory rendering, PMTiles, WMS/WMTS, BSB/KAP, GPX/KML, S-63 and C-Map are not production-ready provider implementations.
+- Premium pack runtime: Billing/entitlement/package-status contracts exist for the first first-party pack, but Play Console setup, purchase UI, backend receipt validation, secure package delivery and UI wiring are still missing.
 
 ## Sources / Checks
 

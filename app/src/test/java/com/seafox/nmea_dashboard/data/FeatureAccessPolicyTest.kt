@@ -48,6 +48,16 @@ class FeatureAccessPolicyTest {
     }
 
     @Test
+    fun premiumChartPackDoesNotUnlockAppFeatureAccess() {
+        val snapshot = EntitlementSnapshot(
+            ownedChartPackIds = setOf(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PACK_ID),
+        )
+
+        assertFalse(FeatureAccessPolicy.canUseWidget(snapshot, WidgetKind.AIS).allowed)
+        assertFalse(FeatureAccessPolicy.canUseFeature(snapshot, MonetizedFeature.offlinePackages).allowed)
+    }
+
+    @Test
     fun expiredEntitlementBlocksPremiumWidgetAccess() {
         val snapshot = EntitlementSnapshot(
             tier = SubscriptionTier.FLEET,

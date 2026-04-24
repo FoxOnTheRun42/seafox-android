@@ -46,14 +46,39 @@ class EntitlementPolicyTest {
     }
 
     @Test
+    fun chartPackEntitlementsStaySeparateFromAppTiersAndExternalLicenses() {
+        val navigator = EntitlementSnapshot(tier = SubscriptionTier.NAVIGATOR)
+        val chartPackOnly = EntitlementSnapshot(
+            ownedChartPackIds = setOf(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PACK_ID),
+        )
+
+        assertFalse(
+            EntitlementPolicy.isChartPackOwned(navigator, BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PACK_ID),
+        )
+        assertTrue(
+            EntitlementPolicy.isChartPackOwned(chartPackOnly, "SEAFOX-PREMIUM-DE-COAST"),
+        )
+        assertFalse(EntitlementPolicy.isChartProviderLicensed(chartPackOnly, "c-map"))
+        assertFalse(EntitlementPolicy.hasFeature(chartPackOnly, MonetizedFeature.offlinePackages))
+    }
+
+    @Test
     fun expiredSnapshotGrantsNothing() {
         val snapshot = EntitlementSnapshot(
             tier = SubscriptionTier.FLEET,
+            ownedChartPackIds = setOf(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PACK_ID),
             licensedChartProviderIds = setOf("s63"),
             validUntilEpochMs = 1_000L,
         )
 
         assertFalse(EntitlementPolicy.hasFeature(snapshot, MonetizedFeature.fleetManagement, nowEpochMs = 1_001L))
+        assertFalse(
+            EntitlementPolicy.isChartPackOwned(
+                snapshot,
+                BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PACK_ID,
+                nowEpochMs = 1_001L,
+            ),
+        )
         assertFalse(EntitlementPolicy.isChartProviderLicensed(snapshot, "s63", nowEpochMs = 1_001L))
     }
 }

@@ -27,14 +27,37 @@ class BillingCatalogTest {
     @Test
     fun inactiveChartPlaceholdersDoNotGrantAppTiersOrChartLicenses() {
         assertNull(BillingCatalog.tierForProductId("seafox.chart.cmap.external"))
+        assertNull(BillingCatalog.chartPackForProductId("seafox.chart.cmap.external"))
         assertNull(BillingCatalog.chartProviderForProductId("seafox.chart.cmap.external"))
         assertNull(BillingCatalog.chartProviderForProductId("seafox.chart.s63.external"))
     }
 
     @Test
-    fun activeCatalogContainsOnlySellableAppProductsForNow() {
+    fun activeCatalogContainsAppSubscriptionsAndFirstPartyChartPacksOnly() {
         val activeKinds = BillingCatalog.activeProducts().map { product -> product.kind }.toSet()
 
-        assertEquals(setOf(BillingProductKind.appSubscription), activeKinds)
+        assertEquals(
+            setOf(BillingProductKind.appSubscription, BillingProductKind.firstPartyChartPack),
+            activeKinds,
+        )
+    }
+
+    @Test
+    fun mapsPremiumChartPackToInAppProductWithoutGrantingAppTierOrExternalLicense() {
+        assertEquals(
+            BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PACK_ID,
+            BillingCatalog.chartPackForProductId(" SEAFOX.CHARTPACK.DE_COAST "),
+        )
+        assertNull(BillingCatalog.tierForProductId(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PRODUCT_ID))
+        assertNull(BillingCatalog.chartProviderForProductId(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PRODUCT_ID))
+    }
+
+    @Test
+    fun exposesPlayProductTypesForRestoreQueries() {
+        assertTrue("seafox.pro.monthly" in BillingCatalog.activeSubscriptionProductIds())
+        assertTrue(BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PRODUCT_ID in BillingCatalog.activeInAppProductIds())
+        assertTrue(
+            BillingCatalog.activeProductsForPlayType(BillingPlayProductType.external).isEmpty(),
+        )
     }
 }

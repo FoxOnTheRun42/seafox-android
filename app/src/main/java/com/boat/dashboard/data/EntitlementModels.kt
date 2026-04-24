@@ -30,6 +30,7 @@ enum class MonetizedFeature {
 
 data class EntitlementSnapshot(
     val tier: SubscriptionTier = SubscriptionTier.FREE,
+    val ownedChartPackIds: Set<String> = emptySet(),
     val licensedChartProviderIds: Set<String> = emptySet(),
     val validUntilEpochMs: Long? = null,
 )
@@ -79,7 +80,17 @@ object EntitlementPolicy {
     ): Boolean {
         if (isExpired(snapshot, nowEpochMs)) return false
         val normalizedProviderId = providerId.trim().lowercase(Locale.ROOT)
-        return normalizedProviderId in snapshot.licensedChartProviderIds.map { it.lowercase(Locale.ROOT) }
+        return normalizedProviderId in snapshot.licensedChartProviderIds.map { it.trim().lowercase(Locale.ROOT) }
+    }
+
+    fun isChartPackOwned(
+        snapshot: EntitlementSnapshot,
+        chartPackId: String,
+        nowEpochMs: Long = System.currentTimeMillis(),
+    ): Boolean {
+        if (isExpired(snapshot, nowEpochMs)) return false
+        val normalizedChartPackId = chartPackId.trim().lowercase(Locale.ROOT)
+        return normalizedChartPackId in snapshot.ownedChartPackIds.map { it.trim().lowercase(Locale.ROOT) }
     }
 
     fun featuresFor(tier: SubscriptionTier): Set<MonetizedFeature> {

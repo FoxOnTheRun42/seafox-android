@@ -39,6 +39,7 @@ object BillingEntitlementMapper {
         val unacknowledgedTokens = linkedSetOf<String>()
         var needsBackendVerification = false
         var bestTier = SubscriptionTier.FREE
+        val ownedChartPackIds = linkedSetOf<String>()
         val licensedChartProviderIds = linkedSetOf<String>()
 
         purchases.forEach { purchase ->
@@ -74,6 +75,9 @@ object BillingEntitlementMapper {
                 BillingCatalog.tierForProductId(productId)?.let { tier ->
                     bestTier = maxTier(bestTier, tier)
                 }
+                BillingCatalog.chartPackForProductId(productId)?.let { chartPackId ->
+                    ownedChartPackIds += chartPackId
+                }
                 BillingCatalog.chartProviderForProductId(productId)?.let { providerId ->
                     licensedChartProviderIds += providerId
                 }
@@ -83,6 +87,7 @@ object BillingEntitlementMapper {
         return BillingRestoreResult(
             entitlementSnapshot = EntitlementSnapshot(
                 tier = bestTier,
+                ownedChartPackIds = ownedChartPackIds,
                 licensedChartProviderIds = licensedChartProviderIds,
                 validUntilEpochMs = validUntilEpochMs,
             ),

@@ -57,11 +57,32 @@ class PlayBillingClientGateway(
     fun queryActiveAppSubscriptions(
         onResult: (BillingResult, List<Purchase>) -> Unit,
     ) {
-        val params = QueryPurchasesParams.newBuilder()
-            .setProductType(BillingClient.ProductType.SUBS)
-            .build()
-        billingClient.queryPurchasesAsync(params) { billingResult, purchases ->
-            onResult(billingResult, purchases)
+        queryActivePurchases(BillingClient.ProductType.SUBS, onResult)
+    }
+
+    fun queryActiveInAppProducts(
+        onResult: (BillingResult, List<Purchase>) -> Unit,
+    ) {
+        queryActivePurchases(BillingClient.ProductType.INAPP, onResult)
+    }
+
+    fun queryActiveEntitlementPurchases(
+        onResult: (BillingResult, List<Purchase>) -> Unit,
+    ) {
+        queryActiveAppSubscriptions { subscriptionResult, subscriptions ->
+            if (subscriptionResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                onResult(subscriptionResult, subscriptions)
+                return@queryActiveAppSubscriptions
+            }
+
+            queryActiveInAppProducts { inAppResult, inAppPurchases ->
+                val result = if (inAppResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                    subscriptionResult
+                } else {
+                    inAppResult
+                }
+                onResult(result, subscriptions + inAppPurchases)
+            }
         }
     }
 
@@ -79,5 +100,17 @@ class PlayBillingClientGateway(
 
     fun endConnection() {
         billingClient.endConnection()
+    }
+
+    private fun queryActivePurchases(
+        productType: String,
+        onResult: (BillingResult, List<Purchase>) -> Unit,
+    ) {
+        val params = QueryPurchasesParams.newBuilder()
+            .setProductType(productType)
+            .build()
+        billingClient.queryPurchasesAsync(params) { billingResult, purchases ->
+            onResult(billingResult, purchases)
+        }
     }
 }
