@@ -32,7 +32,7 @@ seaFOX ist ein fortgeschrittener Alpha-Prototyp mit ernstzunehmendem Kern:
 - Ein erstes eigenes seaFOX Premium-Kartenpaket (`seafox.chartpack.de_coast`) ist als aktives Play-`INAPP`-Produkt modelliert. Es erzeugt nur `ownedChartPackIds`, keine App-Stufe und keine externen Kartenprovider-Lizenzen.
 - Feature-Access-Policy ordnet Widgets und Kernfunktionen testbar `Free`, `Pro`, `Navigator` und `Fleet` zu, ohne Kartenlizenzen mit App-Abos zu vermischen.
 - Play Billing Library ist als App-Subscription-Gateway vorbereitet; Restore-Mapping gewaehrt Entitlements erst nach verifiziertem Kaufstatus und markiert unacknowledged Tokens.
-- Support-Diagnoseberichte koennen sensible Router-/Bootsdaten standardmaessig redigieren und als JSON-Datei exportieren.
+- Support-Diagnoseberichte haben einen user-facing Produktvertrag: JSON wird standardmaessig redigiert, in privatem Cache erzeugt und erst nach Consent-Dialog per FileProvider/Android-Sharesheet geteilt.
 - Lokale Crash-Reports werden als private App-Dateien geschrieben, ohne Cloud-/Telemetry-Upload.
 - Persistenz ueber SharedPreferences und vorhandene App-Versionierung.
 
@@ -42,7 +42,7 @@ Noch nicht produktreif:
 - Keine belastbare UI-/Emulator-/Device-Testautomatisierung.
 - Keine zertifizierte oder rechtlich sauber fertig lizenzierte Kartenstrategie fuer kommerzielle Premiumkarten.
 - Monolithische UI-Struktur mit hohem Aenderungsrisiko.
-- Keine Crash-/Telemetry-/Support-Prozesse mit Backend, Export-UI und Triage-Workflow.
+- Keine Crash-/Telemetry-/Support-Prozesse mit Backend-Triage; der Diagnose-Share-Flow bleibt Nutzer-initiierter Export ohne automatischen Upload und ohne Device-QA-Nachweis.
 
 ## P0 Defizite vor Verkauf
 
@@ -53,8 +53,8 @@ Noch nicht produktreif:
 - Safety Contour: Safety-Depth-Berechnung und DEPARE/DEPCNT/SOUNDG-Filter sind vorhanden und mit Fixtures getestet. Es fehlen noch ein vollstaendiger gerenderter Contour-/Warnpfad aus realen ENC-Zellen und Fixture-Screenshots.
 - UI/UX: Onboarding und Fullscreen-Chart sind vorhanden, aber viele Funktionen liegen weiter in dichten Popups. Fuer Cockpit-Bedienung fehlen noch konsequent grosse Touch-Ziele, klare Statusleisten und validierte Tablet-/Phone-Flows.
 - Release: Release-BuildType, R8/ProGuard-Regeln und optionale Env-Signing-Konfiguration sind vorhanden. Es fehlen Play-Store-Prozess, echte Keystore-Verwaltung, signierter CI-Build, Rollback-Plan und Beta-/Crash-Schiene.
-- Datenschutz: Private Backups und redigierte Diagnoseberichte sind vorbereitet. Es fehlen Privacy Policy, Loeschkonzept, Export-UX und Audit der verbleibenden Logging-Pfade.
-- Betrieb: Diagnosebericht-Logik, lokale Crash-Reports und Boot-Autostart-Policy-Tests sind vorhanden. Es fehlen Export-/Share-Flow, Crash-Triage-Backend und Kompatibilitaetsmatrix fuer Tablets/Android-Versionen.
+- Datenschutz: Private Backups und redigierte Diagnoseberichte sind vorbereitet; der neue Support-Share-Flow muss Router-Host, MMSI, Route und MOB standardmaessig aus geteilten Diagnosepaketen entfernen und vor jedem Share Consent einholen. Es fehlen finalisierte Privacy Policy, Loeschkonzept, Device-QA fuer den Share-Flow und Audit der verbleibenden Logging-Pfade.
+- Betrieb: Diagnosebericht-Logik, lokaler FileProvider/cache-Share-Vertrag, lokale Crash-Reports und Boot-Autostart-Policy-Tests sind vorhanden. Backend-Triage ist nicht Teil des aktuellen Support-Flows; es fehlen Device-/Emulator-QA fuer Share/Consent/Redaction und eine Kompatibilitaetsmatrix fuer Tablets/Android-Versionen.
 
 ## P1 Was gebaut werden muss
 
@@ -106,6 +106,7 @@ Ein Release darf nur raus, wenn alle Punkte erfuellt sind:
 - Crash-freier Beta-Lauf mit Testpersonen ist dokumentiert.
 - Datenschutz, Impressum, Safety Disclaimer und Store Listing sind fertig.
 - `docs/SAFETY_DISCLAIMER_DRAFT.md` und `docs/PRIVACY_POLICY_DRAFT.md` sind juristisch finalisiert und in App/Store uebernommen.
+- Support-Diagnose-Share ist auf FileProvider/cache, Consent-Dialog, Android-Sharesheet und Default-Redaction geprueft; es gibt keinen automatischen Upload und keinen Backend-Triage-Anspruch.
 - Release-Signing und Rollback-Plan sind vorhanden.
 - `docs/RELEASE_CHECKLIST.md` ist fuer den konkreten Kandidaten abgearbeitet.
 - Karten-/Provider-Lizenzstatus ist fuer beworbene Features geklaert.

@@ -8,7 +8,7 @@ Ziel: Jeder Store-Kandidat muss reproduzierbar gebaut, pruefbar signiert, rollba
 
 - `./scripts/seafox-product-check.sh --ci --release-r8` muss gruen sein.
 - Lint darf 0 Errors haben; Warnings muessen bekannt oder als technische Schuld akzeptiert sein.
-- JVM-Tests muessen fuer Safety, Privacy, Boot-Autostart, Kartenprovider, Hazard-Depth-Filter, Billing-Katalog, Billing-Restore-Mapping, Entitlements, Feature Access, lokale Crash-Reports und Diagnose-Export gruen sein.
+- JVM-Tests muessen fuer Safety, Privacy, Boot-Autostart, Kartenprovider, Hazard-Depth-Filter, Billing-Katalog, Billing-Restore-Mapping, Entitlements, Feature Access, lokale Crash-Reports und Diagnose-Export/Redaction gruen sein.
 - `adb`-Device-QA muss separat auf mindestens einem Phone und einem Tablet dokumentiert werden.
 
 ## 2. Signing
@@ -37,6 +37,7 @@ Wichtig: `assemble`, `bundle`, `install` und `package` erhoehen die Buildnummer 
 - Eigenes seaFOX Premium-Kartenpaket nur als first-party Offline-Pack bewerben, wenn Play-Console-`INAPP`, Backend-Verifikation, Auslieferung/Download und lokale Paketvalidierung fuer den Kandidaten nachgewiesen sind.
 - DALY-BMS als Beta kennzeichnen, bis BLE-Device-QA abgeschlossen ist.
 - Safety Contour nur als Assistenzfunktion bewerben, bis echte ENC-Fixtures und Device-Screenshots vorliegen.
+- Support-Diagnose-Share nur als Nutzer-initiierter, redigierter Android-Share beschreiben, nicht als Telemetrie, automatischer Upload oder Backend-Triage-Service.
 
 ## 4. Device-QA
 
@@ -55,7 +56,10 @@ Wichtig: `assemble`, `bundle`, `install` und `package` erhoehen die Buildnummer 
 - Fullscreen-Chart oeffnen/schliessen.
 - Kartenquelle wechseln.
 - NMEA-Router nicht erreichbar.
-- Privaten Diagnosebericht erzeugen und Inhalt auf Redaction pruefen.
+- Support-Diagnose-Share oeffnen: Consent-Dialog pruefen, Share abbrechen und Share fortsetzen.
+- Geteilte Diagnose-JSON ueber `content://`-FileProvider aus App-Cache pruefen; keine `file://`-URI und keine dauerhafte oeffentliche Backup-Datei.
+- Inhalt auf Default-Redaction fuer Router-Host, MMSI, aktive Route und MOB pruefen; sensible Felder duerfen nicht Default fuer oeffentliche Shares sein.
+- Kein automatischer Upload und keine Backend-Triage-Zusage in UI/Store-Texten.
 - Lokalen Crash-Report-Ordner nach Testabsturz/Debug-Drill pruefen, ohne Cloud-Upload.
 - Boot-Autostart nur nach bewusstem Opt-in.
 

@@ -42,7 +42,7 @@ sources:
 
 ## Summary
 
-seaFOX hat am 2026-04-24 ein gruenes lokales Product Gate fuer statische Gesundheit, Kotlin-Compile, JVM-Tests, Android Lint und Release-R8. Seit der aktuellen Produktionshaertung ist Release-R8 nicht nur ein optionaler Script-Schalter, sondern das dokumentierte CI-/Store-Kandidaten-Gate: README, QA-Matrix, Release-Checklist und GitHub Actions verwenden `./scripts/seafox-product-check.sh --ci --release-r8`. Das ist ein wichtiger Release-Shrinker-Nachweis, aber noch keine Release-Freigabe: `adb` fehlt in der lokalen Umgebung, Emulator-/Device-QA wurde nicht ausgefuehrt, ein signierter Store-Kandidat ist nicht belegt, und Release-Gates fuer Kauf-UI, Backend-Receipt-Validierung, Store-/Beta-Flow und Karten-Licensing bleiben offen. Release-Checklist, Billing-Backend-Contract, Privacy-Policy-Entwurf und Safety-Disclaimer-Entwurf existieren als Arbeitsgrundlage, muessen vor Verkauf aber abgearbeitet, finalisiert und in App/Store uebernommen werden.
+seaFOX hat am 2026-04-24 ein gruenes lokales Product Gate fuer statische Gesundheit, Kotlin-Compile, JVM-Tests, Android Lint und Release-R8. Seit der aktuellen Produktionshaertung ist Release-R8 nicht nur ein optionaler Script-Schalter, sondern das dokumentierte CI-/Store-Kandidaten-Gate: README, QA-Matrix, Release-Checklist und GitHub Actions verwenden `./scripts/seafox-product-check.sh --ci --release-r8`. Das ist ein wichtiger Release-Shrinker-Nachweis, aber noch keine Release-Freigabe: `adb` fehlt in der lokalen Umgebung, Emulator-/Device-QA wurde nicht ausgefuehrt, ein signierter Store-Kandidat ist nicht belegt, und Release-Gates fuer Kauf-UI, Backend-Receipt-Validierung, Store-/Beta-Flow und Karten-Licensing bleiben offen. Release-Checklist, Billing-Backend-Contract, Privacy-Policy-Entwurf und Safety-Disclaimer-Entwurf existieren als Arbeitsgrundlage, muessen vor Verkauf aber abgearbeitet, finalisiert und in App/Store uebernommen werden. Der neue Support-Diagnose-Share-Flow ist als Nutzeraktion mit Consent, App-Cache, FileProvider, Android-Sharesheet und Default-Redaction dokumentiert; es gibt keinen automatischen Upload, keine Backend-Triage und noch keinen Device-QA-Nachweis.
 
 ## Current Gate Snapshot
 
@@ -93,7 +93,7 @@ Vorhanden in `app/src/test` am 2026-04-24:
 - `CrashReportFormatterTest`: lokales Crash-Report-Format mit stabilen Feldern und sicheren Defaults.
 - `EntitlementPolicyTest`: Free/Pro/Navigator/Fleet-Featurelogik, getrennte first-party Chart-Pack-Entitlements, getrennte Chart-Provider-Lizenzen und Ablaufdatum.
 - `FeatureAccessPolicyTest`: Widgets und Premiumfunktionen werden Free/Pro/Navigator/Fleet-Features zugeordnet; first-party Chart-Packs schalten keine App-Features frei.
-- `SupportDiagnosticsBuilderTest`: Redaction, optionale sensitive Felder, stabile JSON-Felder, Seiten-/Widget-/Safety-Zusammenfassung und JSON-Datei-Export in ein bereitgestelltes Verzeichnis. Ein user-facing Share-/Export-Flow ist damit noch nicht bewiesen.
+- `SupportDiagnosticsBuilderTest`: Redaction, optionale sensitive Felder, stabile JSON-Felder, Seiten-/Widget-/Safety-Zusammenfassung und JSON-Datei-Export in ein bereitgestelltes Verzeichnis. Der neue user-facing FileProvider/cache-Share mit Consent ist damit als Produktvertrag dokumentiert, aber noch nicht per Device-QA bewiesen.
 - `ChartProviderRegistryTest`: NOAA/QMAP DE/S-57/OpenSeaCharts als selektierbar oder beta, C-MAP lizenzpflichtig, S-63 nicht implementiert.
 - `FreeRasterChartProvidersTest`: QMAP-DE-Tilevertrag, OpenSeaCharts mit OSM-Fallback plus erzwungenem Seamark-Overlay und kein Free-Raster-Override fuer NOAA.
 - `SeaChartSideLoadPackagesTest`: erlaubte MBTiles/GeoPackage-Dateiendungen sowie stabile Sideload-Datei- und Ordnernamen.
@@ -108,7 +108,7 @@ Vorhanden in `app/src/test` am 2026-04-24:
 Fehlend:
 
 - Emulator-Tooling im aktuellen Workspace, weil `adb` hier nicht installiert ist.
-- Emulator-Smoke fuer App-Start, Simulator, Chart, MOB, Settings, Fullscreen-Chart und Support-Diagnostics-Export/Share.
+- Emulator-Smoke fuer App-Start, Simulator, Chart, MOB, Settings, Fullscreen-Chart und Support-Diagnostics-FileProvider/cache-Share mit Consent.
 - manuelle Device-QA auf Tablet und Smartphone, inklusive Boot-Autostart-Verhalten.
 - Compose Screenshot-Tests.
 - NMEA-Replay-Fixtures.
@@ -124,7 +124,8 @@ Status am 2026-04-24: Compile/Test/Lint sind gruen, aber die Release-Gates sind 
 - verpflichtendes Release-R8/Minify-Gate mit `./scripts/seafox-product-check.sh --ci --release-r8` fuer CI und Store-Kandidaten
 - Emulator-Smoke fuer App-Start, Simulator, Chart, MOB, Settings und kritische Settings-/Export-Pfade
 - Emulator-Smoke fuer lokalen MBTiles/GeoPackage-Import ueber Android-Dateiauswahl, Offline-Anzeige von Raster-MBTiles und ehrliche Nicht-Renderbar-Meldung fuer GeoPackage/Vector-MBTiles
-- manuelle Device-QA auf Tablet und Smartphone, jeweils Portrait/Landscape, Offline, GPS-Berechtigungen, MOB, Fullscreen-Chart, Kartenquelle, NMEA-Router-Ausfall, Diagnose-Redaction und Boot-Autostart nur nach Opt-in
+- manuelle Device-QA auf Tablet und Smartphone, jeweils Portrait/Landscape, Offline, GPS-Berechtigungen, MOB, Fullscreen-Chart, Kartenquelle, NMEA-Router-Ausfall, Diagnose-Share-Consent/FileProvider/Redaction und Boot-Autostart nur nach Opt-in
+- Support-Wahrheit: Diagnose-Share ist Nutzer-initiiert, standardmaessig redigiert, cache-/FileProvider-basiert und ohne automatischen Upload oder Backend-Triage-Versprechen
 - crash-freier Beta-Lauf mit Testpersonen
 - Datenschutz, Impressum, Safety Disclaimer und Store Listing; `docs/PRIVACY_POLICY_DRAFT.md` und `docs/SAFETY_DISCLAIMER_DRAFT.md` sind Entwuerfe und brauchen juristische Finalisierung
 - Release-Signing, Keystore-Verantwortung und Rollback-Plan; die Checklist nennt `SEAFOX_RELEASE_STORE_FILE`, `SEAFOX_RELEASE_STORE_PASSWORD`, `SEAFOX_RELEASE_KEY_ALIAS` und `SEAFOX_RELEASE_KEY_PASSWORD`, aber ein signierter Kandidat ist noch nicht nachgewiesen
@@ -146,7 +147,7 @@ Kartenlizenzen sind getrennt von App-Feature-Entitlements zu behandeln. Der aktu
 ## Privacy and Safety Drafts
 
 - `docs/PRIVACY_POLICY_DRAFT.md` beschreibt Bootsdaten, Netzwerkdaten, Geraetedaten und optionale Supportdaten; lokale Speicherung ist Standard, Backups bleiben privat, oeffentliche Exporte brauchen Nutzeraktion.
-- Sensible Daten sind unter anderem MMSI, Route, MOB-Position, GPS-/Trackdaten, Router-Host, NMEA-Quellen und Diagnoseinformationen. Diagnoseberichte redigieren Routerdaten standardmaessig.
+- Sensible Daten sind unter anderem MMSI, Route, MOB-Position, GPS-/Trackdaten, Router-Host, NMEA-Quellen und Diagnoseinformationen. Diagnose-Shares redigieren Router-Host, MMSI, Route und MOB standardmaessig und duerfen erst nach Nutzer-Consent ueber FileProvider/Sharesheet geteilt werden.
 - seaFOX soll ohne verpflichtenden Cloud-Account funktionieren. Lokale Crash-Reports werden privat in App-Dateien geschrieben; Cloud-Backup, Telemetrie, externes Crash-Reporting oder Support-Upload brauchen vor Aktivierung Nutzerinformation und dokumentierte Rechtsgrundlage.
 - Offen vor Store-Release: Loeschkonzept, Exportkonzept, Kontaktweg, Impressum, Rechtsgrundlage, Drittanbieter-Liste und juristische Finalisierung.
 - `docs/SAFETY_DISCLAIMER_DRAFT.md` setzt die Produktwahrheit: seaFOX ist kein zertifiziertes ECDIS, kein amtliches Navigationssystem und kein Ersatz fuer zugelassene Seekarten, Ausguck, Seemannschaft oder eigenverantwortliche Navigation.

@@ -39,7 +39,7 @@ sources:
 
 seaFOX sammelt Borddaten ueber Netzwerk, GPS, BLE und Simulation. Weil es ein Marine-Kontext ist, sind Safety-Gates, Datenschutz, Diagnose-Redaktion und ehrliche Produkt-/Billing-Aussagen Produktbestandteile, nicht nur technische Details.
 
-Stand 2026-04-24: Die Domainlogik fuer Autopilot Safety Gate, Backup Privacy, Boot-Autostart-Opt-in, Support Diagnostics, Entitlements, Feature Access, Billing-Restore-Mapping und lokale Crash-Reports ist sichtbar und getestet. Die groessten Product/Safety-Risiken liegen nicht in fehlender Syntax, sondern in Runtime-Truth: Boot-Autostart ist im Code gegen Boot, Unlock und internen Delayed Launch gehaertet, aber noch nicht auf Device/Emulator bewiesen; Entitlements sind noch nicht an Kauf-UI/Backend-Receipt-Validierung/UI-Laufzeitgates angeschlossen; Support Diagnostics hat JSON-/Datei-Export im Datenlayer, aber keinen nachgewiesenen Nutzer-Export-/Share-Flow.
+Stand 2026-04-24: Die Domainlogik fuer Autopilot Safety Gate, Backup Privacy, Boot-Autostart-Opt-in, Support Diagnostics, Entitlements, Feature Access, Billing-Restore-Mapping und lokale Crash-Reports ist sichtbar und getestet. Die groessten Product/Safety-Risiken liegen nicht in fehlender Syntax, sondern in Runtime-Truth: Boot-Autostart ist im Code gegen Boot, Unlock und internen Delayed Launch gehaertet, aber noch nicht auf Device/Emulator bewiesen; Entitlements sind noch nicht an Kauf-UI/Backend-Receipt-Validierung/UI-Laufzeitgates angeschlossen; Support Diagnostics bekommt einen user-facing Share-Flow-Vertrag ueber App-Cache, FileProvider und Android-Sharesheet nach Consent, aber noch keinen Device-QA-Nachweis.
 
 Seit Chart Roadmap Task 03 unterscheidet `EntitlementSnapshot` auch eigene Kartenpakete (`ownedChartPackIds`) von externen Provider-Lizenzen (`licensedChartProviderIds`). Das erste first-party Pack ist `seafox-premium-de-coast` ueber Play-`INAPP` `seafox.chartpack.de_coast`.
 
@@ -86,7 +86,7 @@ Aus `README.md`:
 - **Boot autostart is code-gated but needs device proof:** `BootCompletedReceiver` delegates Boot, Locked-Boot, User-Unlocked and the internal delayed action to `BootAutostartPolicy.decide`. Disabled or missing state returns `skipDisabled`; enabled Boot schedules a delayed launch; enabled Unlock/internal actions launch immediately. `BootAutostartPolicyTest` covers the bypass case that previously let Unlock/internal paths skip the opt-in. Remaining risk: no real Android boot/unlock/device QA has been run locally because `adb` is unavailable.
 - **Entitlements are not fully runtime-enforced:** `EntitlementPolicy` models `Free`, `Pro`, `Navigator` and `Fleet`, separates first-party chart packs from licensed chart providers, and blocks expired snapshots. `PlayBillingClientGateway` and `BillingEntitlementMapper` prepare restore/acknowledge plus verified entitlement mapping, but purchase UI, backend receipt validation, trial rules and UI/action enforcement remain open.
 - **Billing catalog now distinguishes app subscriptions, first-party chart packs and external placeholders:** `BillingCatalog` defines active app-subscription product ids for `Pro`, `Navigator` and `Fleet`, plus `seafox.chartpack.de_coast` as an active first-party Play-`INAPP` that grants only `ownedChartPackIds`. Chart-license products for C-Map and S-63 are inactive external placeholders and do not grant app tiers, first-party packs or chart provider licenses.
-- **Support diagnostics have data-layer JSON/file export only:** `SupportDiagnosticsBuilder`, `SupportDiagnosticsJson.toMap`, `toJsonString` and `SupportDiagnosticsExporter.writeReport` exist and are covered by JVM tests. `writeReport` writes a `seafox-diagnostics-{createdAt}.json` file into a supplied directory and creates that directory if needed. Search in current app UI/ViewModel sources found no user-facing export/share entry point yet, so product docs should keep this as a prepared utility, not a proven support workflow.
+- **Support diagnostics share flow is user-facing but not device-proven:** `SupportDiagnosticsBuilder`, `SupportDiagnosticsJson.toMap`, `toJsonString` and `SupportDiagnosticsExporter.writeReport` exist and are covered by JVM tests. The documented support flow is explicit user action -> consent dialog -> redacted JSON in app cache -> FileProvider `content://` URI -> Android Sharesheet. Public/default shares must redact Router-Host, MMSI, Route and MOB data. There is no automatic upload and no backend triage in the current product contract. Remaining risk: no emulator/device proof for consent copy, FileProvider URI grants, sharesheet behavior or cache/public-file boundaries.
 - **Device proof is missing:** The product check passed in the CEO sync, but `adb` was unavailable. Boot autostart, emulator flows, device GPS/BLE and hardware-near autopilot behavior remain unverified locally.
 
 ## Entitlement and Billing Truth
@@ -109,10 +109,13 @@ Aus `README.md`:
 ## Support Diagnostics Truth
 
 - `SupportDiagnosticsBuilder.build` summarizes app version, Android SDK, creation time, privacy mode, boot autostart, simulation, NMEA protocol/host/port, page count, widget count, active route, MOB marker and detected source count.
-- Router host is redacted by default as `<redacted>` unless `includeSensitive = true`.
+- User-facing support diagnostics are a consent-gated share action, not telemetry. The app should create the report only after a visible consent dialog and hand it to the Android Sharesheet through FileProvider.
+- The shared artifact should live in app cache and be exposed as a `content://` URI. It must not depend on a durable public export directory or a `file://` URI.
+- Public/default shares use redaction. Router host, MMSI, route details and MOB data are sensitive and must not be exposed by default; `includeSensitive = true` is not the public-share default.
+- There is no automatic upload and no backend triage promise in the current support flow. Any support analysis is manual and starts only after the user deliberately shares the artifact.
 - JSON serialization is stable through `SupportDiagnosticsJson.toMap` and `toJsonString`; tests assert stable fields such as `appVersionName`, `androidSdk`, `createdAtEpochMs`, `backupPrivacyMode`, `nmeaRouterProtocol`, `nmeaRouterHost` and `udpPort`.
 - `SupportDiagnosticsExporter.writeReport` writes `seafox-diagnostics-{createdAt}.json` to a supplied directory and creates that directory when needed.
-- Missing product surface: a gated export/share UI, user consent copy, support destination and triage workflow are not proven in the current app sources.
+- Missing proof: emulator/device QA for consent copy, `content://` URI delivery, sharesheet behavior, default redaction and absence of unintended upload.
 
 ## Crash Reporting Truth
 
@@ -137,12 +140,12 @@ Aus `README.md`:
 - Emulator permission tests for GPS.
 - Replay tests for NMEA UDP/AIS.
 - Manual or instrumented boot/unlock tests proving disabled autostart cannot launch the app.
-- UI test or manual proof for a support diagnostics export/share flow once wired.
+- UI test or manual proof for the support diagnostics FileProvider/cache share flow, including consent copy, `content://` URI delivery and default redaction. Device QA is not available yet.
 
 ## Open Questions
 
 - Welche NMEA-Replay-Fixtures sollen als erste stabile Regression Suite dienen?
-- Wie wird Support-Diagnose exportiert und triagiert, ohne sensible Daten zu verlieren oder ungewollt zu teilen?
+- Welcher manuelle Support-Kanal nimmt nutzerinitiierte, redigierte Diagnose-Shares entgegen, ohne Backend-Triage oder automatischen Upload zu versprechen?
 - Welche Hardware-Bench-Checkliste ist fuer Autopilot-Kommandos minimal notwendig?
 - Welche Device-/Emulator-Bootprozedur beweist, dass `BootAutostartPolicy` auf echten Android-Versionen nicht durch OEM-Verhalten umgangen wird?
 - Wo wird die erste runtime-faehige Entitlement-Pruefung verankert, ohne App-Subscriptions mit externen Kartenlizenzen zu vermischen?

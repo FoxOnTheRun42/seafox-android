@@ -13,8 +13,8 @@ Diese Matrix ist der Produktvertrag zwischen Entwicklung, Design, QA und Release
 | Dashboard | Seite erstellen, umbenennen, loeschen | State bleibt nach Neustart erhalten | UI test |
 | Widgets | Drag, Resize, Lock/Edit | Keine kaputten Layouts auf Phone/Tablet | Screenshot test |
 | Widget Presets | Segelboot/Motorboot/Anker | Sinnvolle Default-Layouts | Manual + screenshot |
-| Datenschutz | Private Backups und manueller Export | Sensible Bootsdaten verlassen die App nicht automatisch | JVM policy + UI test |
-| Support | Diagnosepaket erstellen | Router-Host und sensible Daten sind standardmaessig redigiert | JVM policy + manual export |
+| Datenschutz | Private Backups und Support-Share | Sensible Bootsdaten verlassen die App nur nach bewusster Nutzeraktion; oeffentliche Shares sind redigiert | JVM policy + UI test |
+| Support | Diagnose-Share starten | Consent-Dialog sichtbar; cache-basierte JSON wird per FileProvider/Sharesheet geteilt; Router-Host, MMSI, Route und MOB sind standardmaessig redigiert; kein automatischer Upload oder Backend-Triage | JVM policy + UI/manual share |
 | Boot-Autostart | Boot, Unlock und interner Delayed Launch | App startet nur nach bewusstem Opt-in | JVM policy + device boot test |
 | GPS | Keine Berechtigung, grobe/fine Berechtigung | Klare Statusmeldung und Recovery | Emulator permission test |
 | SeaChart | Karte oeffnet ohne Online-Daten | Offline-Style/Land-Fallback sichtbar | Emulator smoke |
@@ -49,9 +49,11 @@ Diese Matrix ist der Produktvertrag zwischen Entwicklung, Design, QA und Release
 - Vorhanden: `./scripts/seafox-product-check.sh --ci --release-r8` fuer Release-Minify/R8 ohne signiertes Artefakt.
 - Vorhanden: `./scripts/seafox-device-smoke.sh` fuer nicht-destruktiven adb-Smoke mit optionaler Installation einer vorhandenen APK, App-Start, Screenshot, UI-Dump und Logcat-Capture.
 - Vorhanden: JVM-Tests fuer `GeoCalc`, Boot-Autostart-Policy, Autopilot-Safety-Gate, Backup-Privacy, Chart-Provider-Verfuegbarkeit, Free-Raster-Provider-Vertraege, MBTiles/GeoPackage-Sideload-Dateivertraege, S-57-Renderer-Skeleton/SCAMIN/SOUNDG, oeSENC-Nichtunterstuetzung, Premium-Chart-Pack-Status, persistierte SeaChart-Provider-Normalisierung inklusive JSON-Parsing, Hazard-Depth-Filter, Safety-Contour-Policy, Entitlement-Policy, Feature-Access-Policy, Billing-Katalog, Billing-Restore-Mapping, lokalen Crash-Report-Formatter und Support-Diagnose-Export.
+- Dokumentierter Produktvertrag: Der user-facing Support-Diagnose-Share nutzt App-Cache, FileProvider und Android-Sharesheet erst nach Consent; er ist standardmaessig redigiert und bleibt ohne automatischen Upload oder Backend-Triage.
 - Vorhanden: Erststart-Onboarding und Fullscreen-Chart im Compose-Code; noch ohne Emulator-/Device-Nachweis.
 - Hinweis: Das Device-Smoke-Script fuehrt keine Gradle-Tasks aus und loest damit keine Buildnummern-Inkremente aus; eine APK muss bei Bedarf bereits vorhanden sein.
 - Fehlend: Echte Emulator-/Device-Nachweise im aktuellen Workspace, solange kein adb-faehiges Device angeschlossen ist.
+- Fehlend: Emulator-/Device-Nachweis fuer Support-Diagnose-Share, insbesondere Consent-Copy, `content://`-URI statt oeffentlicher Datei, Default-Redaction fuer Router-Host/MMSI/Route/MOB und kein unbeabsichtigter Upload.
 - Fehlend: Compose Screenshot-Tests, NMEA-Replay-Fixtures, Karten-Fixtures, Hardware-Bench-Protokolle.
 
 ## Definition of Done fuer neue Features
@@ -60,4 +62,5 @@ Diese Matrix ist der Produktvertrag zwischen Entwicklung, Design, QA und Release
 - Kritische Rechenlogik bekommt JVM-Tests.
 - UI-Features bekommen mindestens einen Emulator- oder Screenshot-Nachweis.
 - Kartenfeatures bekommen ein kleines Fixture oder eine reproduzierbare Testzelle.
+- Support-/Privacy-Features brauchen Consent-Copy, Default-Redaction und einen Nachweis, dass sie ohne impliziten Upload oder Backend-Triage funktionieren.
 - Marine-Safety-Features brauchen manuelle Device-QA plus klaren Disclaimer.

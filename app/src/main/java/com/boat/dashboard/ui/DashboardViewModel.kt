@@ -34,13 +34,18 @@ import com.seafox.nmea_dashboard.data.toUdpJson
 import com.seafox.nmea_dashboard.data.BoatProfile
 import com.seafox.nmea_dashboard.data.NmeaPgnHistoryEntry
 import com.seafox.nmea_dashboard.data.Nmea0183HistoryEntry
+import com.seafox.nmea_dashboard.data.SupportDiagnosticsBuilder
+import com.seafox.nmea_dashboard.data.SupportDiagnosticsExporter
+import com.seafox.nmea_dashboard.data.SupportDiagnosticsShareContract
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import com.seafox.nmea_dashboard.BuildConfig
 import org.json.JSONObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,6 +58,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -1342,6 +1348,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun updateBootAutostartEnabled(enabled: Boolean) {
         _state.update { current -> current.copy(bootAutostartEnabled = enabled) }
         persist()
+    }
+
+    fun writeSupportDiagnostics(includeSensitive: Boolean = false): File {
+        val report = SupportDiagnosticsBuilder.build(
+            state = _state.value,
+            appVersionName = BuildConfig.VERSION_NAME,
+            androidSdk = Build.VERSION.SDK_INT,
+            includeSensitive = includeSensitive,
+        )
+        return SupportDiagnosticsExporter.writeReport(
+            directory = SupportDiagnosticsShareContract.cacheDirectory(appContext.cacheDir),
+            report = report,
+        )
     }
 
     fun completeOnboarding() {

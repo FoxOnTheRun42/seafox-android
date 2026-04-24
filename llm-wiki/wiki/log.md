@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] docs | Support diagnostics share flow contract
+
+- Sources: `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/RELEASE_CHECKLIST.md`, `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`
+- Updated: `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/RELEASE_CHECKLIST.md`, `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`, `wiki/log.md`
+- Notes: Dokumentation fuer neuen user-facing Support-Diagnose-Share-Flow nachgezogen: Nutzer-Consent vor Share, JSON im App-Cache, FileProvider/Android-Sharesheet, Default-Redaction fuer Router-Host, MMSI, Route und MOB. Kein automatischer Upload, kein Backend-Triage-Versprechen und noch kein Device-QA-Nachweis. Keine Source-Dateien angefasst und gemaess Auftrag keine Tests/Builds ausgefuehrt.
+
 ## [2026-04-24] implementation | Chart Roadmap Task 04 renderer skeleton
 
 - Sources: `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/enc/EncRendererSkeleton.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/S57CellSelector.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/s57/S57ChartProvider.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/s57/S57ToGeoJson.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/enc/EncRendererSkeletonTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/S57CellSelectorTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/s57/S57ToGeoJsonTest.kt`

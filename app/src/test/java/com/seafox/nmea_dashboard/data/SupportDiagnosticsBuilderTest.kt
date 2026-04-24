@@ -27,17 +27,30 @@ class SupportDiagnosticsBuilderTest {
     @Test
     fun canIncludeSensitiveFieldsWhenUserExplicitlyAllowsIt() {
         val report = SupportDiagnosticsBuilder.build(
-            state = DashboardState(nmeaRouterHost = "router.local"),
+            state = DashboardState(
+                nmeaRouterHost = "router.local",
+                activeRoute = SerializedRoute(
+                    id = "route-1",
+                    name = "Harbor exit",
+                    waypoints = listOf(
+                        SerializedWaypoint(id = "wp-1", name = "Start", lat = 54.0, lon = 10.0),
+                        SerializedWaypoint(id = "wp-2", name = "Turn", lat = 54.1, lon = 10.1),
+                    ),
+                ),
+                mobPosition = MobMarker(lat = 54.0, lon = 10.0),
+            ),
             appVersionName = "1.0.0",
             androidSdk = 35,
             includeSensitive = true,
         )
 
         assertEquals("router.local", report.nmeaRouterHost)
+        assertTrue(report.hasActiveRoute)
+        assertTrue(report.hasMobMarker)
     }
 
     @Test
-    fun summarizesPagesWidgetsAndSafetyMarkers() {
+    fun summarizesPagesWidgetsAndRedactsSafetyMarkersByDefault() {
         val state = DashboardState(
             pages = listOf(
                 DashboardPage(
@@ -48,6 +61,14 @@ class SupportDiagnosticsBuilderTest {
                     ),
                 )
             ),
+            activeRoute = SerializedRoute(
+                id = "route-2",
+                name = "Night route",
+                waypoints = listOf(
+                    SerializedWaypoint(id = "wp-3", name = "Start", lat = 54.2, lon = 10.2),
+                    SerializedWaypoint(id = "wp-4", name = "Finish", lat = 54.3, lon = 10.3),
+                ),
+            ),
             mobPosition = MobMarker(lat = 54.0, lon = 10.0),
         )
 
@@ -57,7 +78,7 @@ class SupportDiagnosticsBuilderTest {
         assertEquals(0, report.androidSdk)
         assertEquals(1, report.pageCount)
         assertEquals(2, report.widgetCount)
-        assertTrue(report.hasMobMarker)
+        assertFalse(report.hasMobMarker)
         assertFalse(report.hasActiveRoute)
     }
 
@@ -104,5 +125,16 @@ class SupportDiagnosticsBuilderTest {
         assertTrue(file.name.startsWith("seafox-diagnostics-1234"))
         assertTrue(text.contains("\"appVersionName\": \"2.0.0\""))
         assertTrue(text.contains("\"nmeaRouterHost\": \"<redacted>\""))
+    }
+
+    @Test
+    fun shareContractUsesPrivateCacheSubdirectoryAndJsonMime() {
+        val cacheRoot = temporaryFolder.newFolder("cache")
+        val directory = SupportDiagnosticsShareContract.cacheDirectory(cacheRoot)
+
+        assertEquals("support-diagnostics", directory.name)
+        assertEquals(cacheRoot.absolutePath, directory.parentFile?.absolutePath)
+        assertEquals("application/json", SupportDiagnosticsShareContract.MIME_TYPE)
+        assertEquals("seaFOX Support-Diagnose", SupportDiagnosticsShareContract.SHARE_SUBJECT)
     }
 }

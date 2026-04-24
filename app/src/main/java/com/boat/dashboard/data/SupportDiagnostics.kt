@@ -19,6 +19,16 @@ data class SupportDiagnosticReport(
     val detectedSourceCount: Int,
 )
 
+object SupportDiagnosticsShareContract {
+    const val CACHE_SUBDIRECTORY = "support-diagnostics"
+    const val MIME_TYPE = "application/json"
+    const val SHARE_SUBJECT = "seaFOX Support-Diagnose"
+    const val SHARE_CHOOSER_TITLE = "seaFOX Support-Diagnose teilen"
+    const val SHARE_TEXT = "Redigierter seaFOX Diagnosebericht. Bitte vor dem Teilen kurz pruefen."
+
+    fun cacheDirectory(cacheRoot: File): File = File(cacheRoot, CACHE_SUBDIRECTORY)
+}
+
 object SupportDiagnosticsBuilder {
     fun build(
         state: DashboardState,
@@ -42,8 +52,8 @@ object SupportDiagnosticsBuilder {
             udpPort = state.udpPort.coerceIn(1, 65535),
             pageCount = state.pages.size,
             widgetCount = state.pages.sumOf { page -> page.widgets.size },
-            hasActiveRoute = state.activeRoute != null,
-            hasMobMarker = state.mobPosition != null,
+            hasActiveRoute = state.activeRoute != null && includeSensitive,
+            hasMobMarker = state.mobPosition != null && includeSensitive,
             detectedSourceCount = state.detectedNmeaSources.size,
         )
     }

@@ -25,7 +25,9 @@ import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import android.speech.tts.TextToSpeech
+import android.content.ClipData
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.media.AudioManager
 import android.database.Cursor
@@ -155,6 +157,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.seafox.nmea_dashboard.data.DashboardPage
 import com.seafox.nmea_dashboard.data.DashboardWidget
 import com.seafox.nmea_dashboard.data.DashboardState
@@ -176,6 +179,7 @@ import com.seafox.nmea_dashboard.data.WidgetKind
 import com.seafox.nmea_dashboard.data.SerializedRoute
 import com.seafox.nmea_dashboard.data.SerializedWaypoint
 import com.seafox.nmea_dashboard.data.NmeaRouterProtocol
+import com.seafox.nmea_dashboard.data.SupportDiagnosticsShareContract
 import com.seafox.nmea_dashboard.data.autopilotProtocolHint
 import com.seafox.nmea_dashboard.data.autopilotGatewayHint
 import com.seafox.nmea_dashboard.data.widgetHelpLines
@@ -872,6 +876,18 @@ class MainActivity : ComponentActivity() {
                         onUpdateBoatProfile = viewModel::updateBoatProfile,
                         onUpdateBackupPrivacyMode = viewModel::updateBackupPrivacyMode,
                         onUpdateBootAutostartEnabled = viewModel::updateBootAutostartEnabled,
+                        onShareSupportDiagnostics = {
+                            runCatching { viewModel.writeSupportDiagnostics(includeSensitive = false) }
+                                .fold(
+                                    onSuccess = { reportFile ->
+                                        shareSupportDiagnosticsReport(
+                                            context = this@MainActivity,
+                                            reportFile = reportFile,
+                                        )
+                                    },
+                                    onFailure = { error -> Result.failure(error) },
+                                )
+                        },
                         onUpdateRouterSimulationOrigin = viewModel::updateRouterSimulationOrigin,
                         onClearStoredData = viewModel::clearAllStoredData,
                         onRestoreStoredData = { viewModel.restoreStoredData() },
@@ -1248,6 +1264,32 @@ private fun backupPrivacyModeDescription(mode: BackupPrivacyMode): String {
         BackupPrivacyMode.manualExport -> "Öffentliche Exporte nur nach manueller Nutzeraktion."
         BackupPrivacyMode.cloudAllowed -> "Cloud-/System-Backup ist erlaubt, nur mit bewusstem Opt-in."
     }
+}
+
+private fun shareSupportDiagnosticsReport(
+    context: Context,
+    reportFile: File,
+): Result<String> = runCatching {
+    val reportUri = FileProvider.getUriForFile(
+        context,
+        "${BuildConfig.APPLICATION_ID}.fileprovider",
+        reportFile,
+    )
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = SupportDiagnosticsShareContract.MIME_TYPE
+        putExtra(Intent.EXTRA_STREAM, reportUri)
+        putExtra(Intent.EXTRA_SUBJECT, SupportDiagnosticsShareContract.SHARE_SUBJECT)
+        putExtra(Intent.EXTRA_TEXT, SupportDiagnosticsShareContract.SHARE_TEXT)
+        clipData = ClipData.newUri(context.contentResolver, reportFile.name, reportUri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(
+        Intent.createChooser(
+            shareIntent,
+            SupportDiagnosticsShareContract.SHARE_CHOOSER_TITLE,
+        )
+    )
+    reportFile.name
 }
 
 private val windHistoryWindowOptions = listOf(
@@ -5285,6 +5327,7 @@ private fun DashboardTopBar(
     onUpdateBoatProfile: (BoatProfile) -> Unit,
     onUpdateBackupPrivacyMode: (BackupPrivacyMode) -> Unit,
     onUpdateBootAutostartEnabled: (Boolean) -> Unit,
+    onShareSupportDiagnostics: () -> Result<String>,
     onUpdateRouterSimulationOrigin: (Float, Float) -> Unit,
     onClearStoredData: () -> Unit,
     onRestoreStoredData: () -> Boolean,
@@ -5308,6 +5351,8 @@ private fun DashboardTopBar(
     var showUsedPgnsDialog by rememberSaveable { mutableStateOf(false) }
     var showAdapterProgrammingDialog by rememberSaveable { mutableStateOf(false) }
     var showPrivacyDialog by rememberSaveable { mutableStateOf(false) }
+    var showSupportDiagnosticsDialog by rememberSaveable { mutableStateOf(false) }
+    var supportDiagnosticsStatus by rememberSaveable { mutableStateOf<String?>(null) }
     var showWidgetsDialog by rememberSaveable { mutableStateOf(false) }
     var showClearDataDialog by rememberSaveable { mutableStateOf(false) }
     var showRestoreDataDialog by rememberSaveable { mutableStateOf(false) }
@@ -5743,6 +5788,18 @@ private fun DashboardTopBar(
                                     selectedBackupPrivacyMode = state.backupPrivacyMode
                                     selectedBootAutostartEnabled = state.bootAutostartEnabled
                                     showPrivacyDialog = true
+                                    showMenu = false
+                                    menuStage = "main"
+                                },
+                                modifier = compactMenuItemModifier
+                            )
+                            HorizontalDivider()
+                            CompactMenuDropdownItem(
+                                text = "Support-Diagnose teilen",
+                                style = menuTextStyle,
+                                onClick = {
+                                    supportDiagnosticsStatus = null
+                                    showSupportDiagnosticsDialog = true
                                     showMenu = false
                                     menuStage = "main"
                                 },
@@ -6403,6 +6460,68 @@ private fun DashboardTopBar(
                         selectedBackupPrivacyMode = state.backupPrivacyMode
                         selectedBootAutostartEnabled = state.bootAutostartEnabled
                         showPrivacyDialog = false
+                    }
+                )
+            },
+        )
+    }
+
+    if (showSupportDiagnosticsDialog) {
+        CompactMenuDialog(
+            onDismissRequest = { showSupportDiagnosticsDialog = false },
+            isDarkMenu = darkBackground,
+            title = { Text("Support-Diagnose teilen", style = menuTitleStyle) },
+            text = {
+                CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
+                    ProvideTextStyle(value = menuTextStyle) {
+                        Column(verticalArrangement = Arrangement.spacedBy(MENU_SPACING)) {
+                            Text(
+                                "seaFOX erstellt einen lokalen JSON-Diagnosebericht im privaten Cache und öffnet danach das Android-Teilen-Menü.",
+                                style = menuTextStyle,
+                            )
+                            Text(
+                                "Standardmäßig redigiert: Router-Host sowie sensible Bootsdaten wie MMSI, Route und MOB werden nicht offengelegt.",
+                                style = menuTextStyle.copy(color = menuMutedColor),
+                            )
+                            Text(
+                                "Teile den Bericht nur bewusst mit Support oder Entwicklung. Es wird nichts automatisch hochgeladen.",
+                                style = menuTextStyle.copy(color = menuMutedColor),
+                            )
+                            supportDiagnosticsStatus?.let { status ->
+                                HorizontalDivider()
+                                Text(status, style = menuTextStyle)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                CompactMenuTextButton(
+                    text = "Redigierten Bericht teilen",
+                    style = menuTextStyle,
+                    fillWidth = false,
+                    onClick = {
+                        val result = onShareSupportDiagnostics()
+                        supportDiagnosticsStatus = result.fold(
+                            onSuccess = {
+                                showSupportDiagnosticsDialog = false
+                                null
+                            },
+                            onFailure = { error ->
+                                "Diagnose konnte nicht geteilt werden: ${error.message ?: error::class.java.simpleName}"
+                            },
+                        )
+                    }
+                )
+            },
+            dismissButton = {
+                CompactMenuTextButton(
+                    text = "Abbrechen",
+                    style = menuTextStyle,
+                    fillWidth = false,
+                    onClick = {
+                        supportDiagnosticsStatus = null
+                        showSupportDiagnosticsDialog = false
                     }
                 )
             },
@@ -15863,6 +15982,7 @@ fun TopBarPreview() {
             onUpdateBoatProfile = {},
             onUpdateBackupPrivacyMode = {},
             onUpdateBootAutostartEnabled = {},
+            onShareSupportDiagnostics = { Result.success("preview-diagnostics.json") },
             onUpdateRouterSimulationOrigin = { _, _ -> },
             onClearStoredData = {},
             onRestoreStoredData = { false },
