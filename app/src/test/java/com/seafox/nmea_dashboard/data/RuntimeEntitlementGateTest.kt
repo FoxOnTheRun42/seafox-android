@@ -39,6 +39,41 @@ class RuntimeEntitlementGateTest {
     }
 
     @Test
+    fun existingPremiumWidgetIsLockedAfterEntitlementExpires() {
+        val expired = EntitlementSnapshot(
+            tier = SubscriptionTier.PRO,
+            validUntilEpochMs = 100L,
+        )
+
+        val decision = RuntimeEntitlementGate.canUseWidget(
+            snapshot = expired,
+            kind = WidgetKind.AIS,
+            nowEpochMs = 101L,
+        )
+
+        assertFalse(decision.allowed)
+        assertTrue(decision.expired)
+        assertEquals(MonetizedFeature.aisCpa, decision.requiredFeature)
+        assertEquals(SubscriptionTier.PRO, decision.requiredTier)
+        assertTrue(RuntimeEntitlementGate.denialMessage(WidgetKind.AIS, decision).contains("abgelaufen"))
+    }
+
+    @Test
+    fun existingNavigatorWidgetIsLockedAfterFreeRestore() {
+        val freeAfterRestore = EntitlementSnapshot(tier = SubscriptionTier.FREE)
+
+        val nmea0183 = RuntimeEntitlementGate.canUseWidget(freeAfterRestore, WidgetKind.NMEA0183)
+        val system = RuntimeEntitlementGate.canUseWidget(freeAfterRestore, WidgetKind.SYSTEM_PERFORMANCE)
+
+        assertFalse(nmea0183.allowed)
+        assertFalse(system.allowed)
+        assertFalse(nmea0183.expired)
+        assertEquals(MonetizedFeature.supportDiagnostics, nmea0183.requiredFeature)
+        assertEquals(SubscriptionTier.NAVIGATOR, nmea0183.requiredTier)
+        assertEquals(SubscriptionTier.NAVIGATOR, system.requiredTier)
+    }
+
+    @Test
     fun expiredEntitlementProducesExpiredDecision() {
         val expired = EntitlementSnapshot(
             tier = SubscriptionTier.FLEET,

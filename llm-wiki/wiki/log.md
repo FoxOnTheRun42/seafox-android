@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Runtime premium widget render lock
+
+- Sources: `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/main/java/com/boat/dashboard/data/RuntimeEntitlementGate.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/RuntimeEntitlementGateTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/FeatureAccessPolicyTest.kt`, `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/RELEASE_CHECKLIST.md`
+- Updated: `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/RELEASE_CHECKLIST.md`, `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`, `wiki/open-questions.md`, `wiki/log.md`
+- Notes: Bestehende Premium-Widgets werden im Dashboard jetzt gegen den aktuellen `EntitlementSnapshot` geprueft. Nach Free-Restore, Downgrade oder abgelaufenem Snapshot bleiben AIS/Anchor Watch/NMEA/System-Cards verschiebbar und loeschbar, rendern aber nur einen Lock-Placeholder statt Premium-Funktion; der System-Performance-Sampler laeuft nur mit entsperrtem System-Widget. Gezielter Compile plus `RuntimeEntitlementGateTest` war gruen; das volle `./scripts/seafox-product-check.sh --ci --release-r8` war ebenfalls gruen. Device-/Play-QA bleibt offen.
+
 ## [2026-04-24] docs | Designer Briefs in docs/ eingetragen
 
 - Sources: externe Claude-Chat-Session mit Delta-Briefs, bisher ausserhalb des Repos

@@ -20,16 +20,19 @@ sources:
   - ../../../app/src/main/java/com/boat/dashboard/data/SupportDiagnostics.kt
   - ../../../app/src/main/java/com/boat/dashboard/data/EntitlementModels.kt
   - ../../../app/src/main/java/com/boat/dashboard/data/FeatureAccessPolicy.kt
+  - ../../../app/src/main/java/com/boat/dashboard/data/RuntimeEntitlementGate.kt
   - ../../../app/src/main/java/com/boat/dashboard/data/BillingCatalog.kt
   - ../../../app/src/main/java/com/boat/dashboard/data/BillingEntitlementMapper.kt
   - ../../../app/src/main/java/com/boat/dashboard/data/PlayBillingClientGateway.kt
   - ../../../app/src/main/java/com/boat/dashboard/CrashReporting.kt
+  - ../../../app/src/main/java/com/boat/dashboard/MainActivity.kt
   - ../../../app/src/main/java/com/boat/dashboard/ui/DashboardViewModel.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/BootAutostartPolicyTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/BillingCatalogTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/BillingEntitlementMapperTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/CrashReportFormatterTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/FeatureAccessPolicyTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/RuntimeEntitlementGateTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/SupportDiagnosticsBuilderTest.kt
 ---
 
@@ -39,7 +42,7 @@ sources:
 
 seaFOX sammelt Borddaten ueber Netzwerk, GPS, BLE und Simulation. Weil es ein Marine-Kontext ist, sind Safety-Gates, Datenschutz, Diagnose-Redaktion und ehrliche Produkt-/Billing-Aussagen Produktbestandteile, nicht nur technische Details.
 
-Stand 2026-04-24: Die Domainlogik fuer Autopilot Safety Gate, Backup Privacy, Boot-Autostart-Opt-in, Support Diagnostics, Entitlements, Feature Access, Billing-Restore-Mapping, Runtime-Widget-Gates und lokale Crash-Reports ist sichtbar und getestet. Die groessten Product/Safety-Risiken liegen nicht in fehlender Syntax, sondern in Runtime-Truth: Boot-Autostart ist im Code gegen Boot, Unlock und internen Delayed Launch gehaertet, aber noch nicht auf Device/Emulator bewiesen; Entitlements sind jetzt an user-facing Play-Kauf-/Restore-Pfade mit optionaler Backend-HTTP-Validation angebunden, aber Play-Console-Produkte, produktiver Backend-Service, echte Play-Device-QA und vollstaendige UI-Laufzeitgates fehlen weiter; Support Diagnostics bekommt einen user-facing Share-Flow-Vertrag ueber App-Cache, FileProvider und Android-Sharesheet nach Consent, aber noch keinen Device-QA-Nachweis.
+Stand 2026-04-24: Die Domainlogik fuer Autopilot Safety Gate, Backup Privacy, Boot-Autostart-Opt-in, Support Diagnostics, Entitlements, Feature Access, Billing-Restore-Mapping, Runtime-Widget-Gates und lokale Crash-Reports ist sichtbar und getestet. Die groessten Product/Safety-Risiken liegen nicht in fehlender Syntax, sondern in Runtime-Truth: Boot-Autostart ist im Code gegen Boot, Unlock und internen Delayed Launch gehaertet, aber noch nicht auf Device/Emulator bewiesen; Entitlements sind jetzt an user-facing Play-Kauf-/Restore-Pfade mit optionaler Backend-HTTP-Validation angebunden, und Premium-Widgets werden beim Hinzufuegen sowie beim spaeteren Rendern gegen den aktuellen Snapshot geprueft. Play-Console-Produkte, produktiver Backend-Service, echte Play-Device-QA und Runtime-Gates fuer alle uebrigen Premium-Aktionen fehlen weiter; Support Diagnostics bekommt einen user-facing Share-Flow-Vertrag ueber App-Cache, FileProvider und Android-Sharesheet nach Consent, aber noch keinen Device-QA-Nachweis.
 
 Seit Chart Roadmap Task 03 unterscheidet `EntitlementSnapshot` auch eigene Kartenpakete (`ownedChartPackIds`) von externen Provider-Lizenzen (`licensedChartProviderIds`). Das erste first-party Pack ist `seafox-premium-de-coast` ueber Play-`INAPP` `seafox.chartpack.de_coast`.
 
@@ -84,7 +87,7 @@ Aus `README.md`:
 ## Current Release Risks
 
 - **Boot autostart is code-gated but needs device proof:** `BootCompletedReceiver` delegates Boot, Locked-Boot, User-Unlocked and the internal delayed action to `BootAutostartPolicy.decide`. Disabled or missing state returns `skipDisabled`; enabled Boot schedules a delayed launch; enabled Unlock/internal actions launch immediately. `BootAutostartPolicyTest` covers the bypass case that previously let Unlock/internal paths skip the opt-in. Remaining risk: no real Android boot/unlock/device QA has been run locally because `adb` is unavailable.
-- **Entitlements are partially runtime-enforced:** `EntitlementPolicy` models `Free`, `Pro`, `Navigator` and `Fleet`, separates first-party chart packs from licensed chart providers, and blocks expired snapshots. `RuntimeEntitlementGate` blocks premium widget creation via `DashboardViewModel.addWidget`. `Abo & Karten` can restore active Play purchases into the persisted snapshot only after backend validation. Purchase flow, productive backend service, trial rules and broader UI/action enforcement remain open.
+- **Entitlements are partially runtime-enforced:** `EntitlementPolicy` models `Free`, `Pro`, `Navigator` and `Fleet`, separates first-party chart packs from licensed chart providers, and blocks expired snapshots. `RuntimeEntitlementGate` blocks premium widget creation via `DashboardViewModel.addWidget` and existing premium widgets render only a locked placeholder in `DashboardPageLayout` when the current snapshot is Free/expired or below the required tier. `Abo & Karten` can restore active Play purchases into the persisted snapshot only after backend validation. Purchase flow, productive backend service, trial rules and broader UI/action enforcement remain open.
 - **Billing catalog now distinguishes app subscriptions, first-party chart packs and external placeholders:** `BillingCatalog` defines active app-subscription product ids for `Pro`, `Navigator` and `Fleet`, plus `seafox.chartpack.de_coast` as an active first-party Play-`INAPP` that grants only `ownedChartPackIds`. Chart-license products for C-Map and S-63 are inactive external placeholders and do not grant app tiers, first-party packs or chart provider licenses.
 - **Support diagnostics share flow is user-facing but not device-proven:** `SupportDiagnosticsBuilder`, `SupportDiagnosticsJson.toMap`, `toJsonString` and `SupportDiagnosticsExporter.writeReport` exist and are covered by JVM tests. The documented support flow is explicit user action -> consent dialog -> redacted JSON in app cache -> FileProvider `content://` URI -> Android Sharesheet. Public/default shares must redact Router-Host, MMSI, Route and MOB data. There is no automatic upload and no backend triage in the current product contract. Remaining risk: no emulator/device proof for consent copy, FileProvider URI grants, sharesheet behavior or cache/public-file boundaries.
 - **Device proof is missing:** The product check passed in the CEO sync, but `adb` was unavailable. Boot autostart, emulator flows, device GPS/BLE and hardware-near autopilot behavior remain unverified locally.
@@ -113,6 +116,7 @@ Aus `README.md`:
 - Unacknowledged verified purchase tokens are surfaced for acknowledge handling.
 - There is still no productive backend receipt validator, Play Console setup, trial model, Play-device proof, full runtime UI/action gate coverage or premium-pack delivery backend.
 - Runtime widget adds now call `RuntimeEntitlementGate`; denied widgets produce a user-facing message naming the required tier and stating that chart packages/licenses do not unlock app features.
+- Existing premium widgets also call `RuntimeEntitlementGate.canUseWidget` during dashboard rendering. If a restore downgrades to Free or an entitlement expires, AIS, Anchor Watch, NMEA diagnostics and System Performance cards stay movable/deletable but show a locked placeholder and do not execute their premium widget render branches. The System Performance sampler is also disabled unless an entitled System widget is present.
 
 ## Support Diagnostics Truth
 
@@ -158,4 +162,4 @@ Aus `README.md`:
 - Welcher manuelle Support-Kanal nimmt nutzerinitiierte, redigierte Diagnose-Shares entgegen, ohne Backend-Triage oder automatischen Upload zu versprechen?
 - Welche Hardware-Bench-Checkliste ist fuer Autopilot-Kommandos minimal notwendig?
 - Welche Device-/Emulator-Bootprozedur beweist, dass `BootAutostartPolicy` auf echten Android-Versionen nicht durch OEM-Verhalten umgangen wird?
-- Wo wird die erste runtime-faehige Entitlement-Pruefung verankert, ohne App-Subscriptions mit externen Kartenlizenzen zu vermischen?
+- Welche weiteren Premium-Aktionen ausser Widget-Erstellung und Widget-Rendering brauchen noch Runtime-Gates, ohne App-Subscriptions mit externen Kartenlizenzen zu vermischen?

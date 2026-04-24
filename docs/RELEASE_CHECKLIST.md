@@ -55,6 +55,7 @@ Wichtig: `assemble`, `bundle`, `install` und `package` erhoehen die Buildnummer 
 - MOB ausloesen und loeschen.
 - Fullscreen-Chart oeffnen/schliessen.
 - Kartenquelle wechseln.
+- Bestehendes Premium-Widget mit Free/abgelaufenem Snapshot pruefen: Card bleibt verschiebbar/loeschbar, zeigt Lock-Placeholder und fuehrt keine Premium-Funktion aus.
 - NMEA-Router nicht erreichbar.
 - Support-Diagnose-Share oeffnen: Consent-Dialog pruefen, Share abbrechen und Share fortsetzen.
 - Geteilte Diagnose-JSON ueber `content://`-FileProvider aus App-Cache pruefen; keine `file://`-URI und keine dauerhafte oeffentliche Backup-Datei.

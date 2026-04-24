@@ -12,6 +12,26 @@ object RuntimeEntitlementGate {
         snapshot: EntitlementSnapshot,
         kind: WidgetKind,
         nowEpochMs: Long = System.currentTimeMillis(),
+    ): RuntimeEntitlementDecision = evaluateWidgetAccess(
+        snapshot = snapshot,
+        kind = kind,
+        nowEpochMs = nowEpochMs,
+    )
+
+    fun canUseWidget(
+        snapshot: EntitlementSnapshot,
+        kind: WidgetKind,
+        nowEpochMs: Long = System.currentTimeMillis(),
+    ): RuntimeEntitlementDecision = evaluateWidgetAccess(
+        snapshot = snapshot,
+        kind = kind,
+        nowEpochMs = nowEpochMs,
+    )
+
+    private fun evaluateWidgetAccess(
+        snapshot: EntitlementSnapshot,
+        kind: WidgetKind,
+        nowEpochMs: Long,
     ): RuntimeEntitlementDecision {
         val access = FeatureAccessPolicy.canUseWidget(
             snapshot = snapshot,

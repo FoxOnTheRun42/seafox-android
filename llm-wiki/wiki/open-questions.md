@@ -48,7 +48,7 @@ sources:
 - Welche Teile von `MainActivity.kt` werden zuerst extrahiert, um Aenderungsrisiko zu senken?
 - Soll groessere Persistenz fuer Tracks, Routen und Kartenpakete ueber Room/SQLite erfolgen?
 - Welche UI-State-Grenzen braucht ein robuster Fullscreen-Chart-Modus?
-- Wie wird der vorhandene `Abo & Karten` Restore-Pfad zu Kauf-Flow, Trial, produktivem Backend-Validator und Premium-Pack-Auslieferung erweitert?
+- Welche Premium-Aktionen ausser Widget-Erstellung und Widget-Rendering muessen noch an den `Abo & Karten` Snapshot gebunden werden, bevor Trial, produktiver Backend-Validator und Premium-Pack-Auslieferung als Store-Flow gelten duerfen?
 - Welche konkrete Klasse wird erster echter `ChartProvider` statt Registry-/Skeleton-Arbeit?
 
 ## Business / Licensing

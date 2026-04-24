@@ -27,6 +27,8 @@ class FeatureAccessPolicyTest {
         assertFalse(FeatureAccessPolicy.canUseWidget(snapshot, WidgetKind.AIS).allowed)
         assertFalse(FeatureAccessPolicy.canUseWidget(snapshot, WidgetKind.ANCHOR_WATCH).allowed)
         assertFalse(FeatureAccessPolicy.canUseWidget(snapshot, WidgetKind.NMEA_PGN).allowed)
+        assertFalse(FeatureAccessPolicy.canUseWidget(snapshot, WidgetKind.NMEA0183).allowed)
+        assertFalse(FeatureAccessPolicy.canUseWidget(snapshot, WidgetKind.SYSTEM_PERFORMANCE).allowed)
     }
 
     @Test

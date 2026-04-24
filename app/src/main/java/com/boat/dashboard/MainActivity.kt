@@ -173,6 +173,7 @@ import com.seafox.nmea_dashboard.data.BillingRuntimeRestoreApplier
 import com.seafox.nmea_dashboard.data.BillingValidationDecision
 import com.seafox.nmea_dashboard.data.BillingValidationHttpClient
 import com.seafox.nmea_dashboard.data.EntitlementSnapshot
+import com.seafox.nmea_dashboard.data.RuntimeEntitlementGate
 import com.seafox.nmea_dashboard.data.NmeaSourceProfile
 import com.seafox.nmea_dashboard.data.NmeaPgnHistoryEntry
 import com.seafox.nmea_dashboard.data.Nmea0183HistoryEntry
@@ -1164,6 +1165,7 @@ class MainActivity : ComponentActivity() {
                                 recentNmea0183History = recentNmea0183History,
                                 dalyDebugEvents = dalyDebugEvents,
                                 detectedNmeaSources = state.detectedNmeaSources,
+                                entitlementSnapshot = state.entitlementSnapshot,
                                 titleScale = state.fontScale,
                 uiFont = state.uiFont,
                 darkBackground = state.darkBackground,
@@ -1718,6 +1720,61 @@ private fun PremiumDashboardBackdrop(
             )
             drawRect(color = vignetteColor)
         }
+    }
+}
+
+@Composable
+private fun LockedWidgetRuntimePlaceholder(
+    kind: WidgetKind,
+    message: String,
+    darkBackground: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val accent = if (darkBackground) Color(0xFFFFD166) else Color(0xFF8A5A00)
+    val panel = if (darkBackground) Color(0xFF19130D) else Color(0xFFFFF2D1)
+    val bodyColor = if (darkBackground) Color(0xFFECE2CF) else Color(0xFF3A2A12)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(10.dp)
+            .border(
+                width = 1.dp,
+                color = accent.copy(alpha = 0.55f),
+                shape = RoundedCornerShape(18.dp),
+            )
+            .background(
+                color = panel.copy(alpha = 0.82f),
+                shape = RoundedCornerShape(18.dp),
+            )
+            .padding(14.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.Start,
+    ) {
+        Text(
+            text = "Feature gesperrt",
+            style = MaterialTheme.typography.labelMedium,
+            color = accent,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = widgetKindUiLabel(kind),
+            style = MaterialTheme.typography.titleMedium,
+            color = bodyColor,
+            fontWeight = FontWeight.Bold,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodySmall,
+            color = bodyColor.copy(alpha = 0.86f),
+            lineHeight = 17.sp,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Das Widget bleibt verschiebbar und loeschbar, fuehrt aber keine Premium-Funktion aus.",
+            style = MaterialTheme.typography.labelSmall,
+            color = bodyColor.copy(alpha = 0.68f),
+        )
     }
 }
 
@@ -7577,6 +7634,7 @@ private fun DashboardPageLayout(
     recentNmea0183History: List<Nmea0183HistoryEntry>,
     dalyDebugEvents: List<String>,
     detectedNmeaSources: List<NmeaSourceProfile>,
+    entitlementSnapshot: EntitlementSnapshot,
     titleScale: Float,
     uiFont: UiFont,
     darkBackground: Boolean,
@@ -8347,28 +8405,46 @@ private fun DashboardPageLayout(
         )
         var nowForAisRenderMs by remember { mutableStateOf(System.currentTimeMillis()) }
         val systemWidgetSignature = page.widgets.joinToString("|") { "${it.id}:${it.kind}:${it.title}" }
+        val systemPerformanceWidgetUnlocked = page.widgets.any { widget ->
+            normalizeChartWidgetKind(widget.kind) == WidgetKind.SYSTEM_PERFORMANCE &&
+                RuntimeEntitlementGate.canUseWidget(
+                    snapshot = entitlementSnapshot,
+                    kind = widget.kind,
+                ).allowed
+        }
         val activityManager = remember(context) {
             context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         }
-        var systemPerformanceSnapshot by remember(page.id, systemWidgetSignature) {
+        var systemPerformanceSnapshot by remember(page.id, systemWidgetSignature, systemPerformanceWidgetUnlocked) {
             mutableStateOf(
                 SystemWidgetLoadSnapshot(
                     cpuPercent = 0f,
                     memoryMb = 0f,
                     javaHeapMb = 0f,
                     maxHeapMb = Runtime.getRuntime().maxMemory().toFloat() / (1024f * 1024f),
-                    loadEntries = estimateSystemWidgetLoadEntries(page.widgets),
+                    loadEntries = if (systemPerformanceWidgetUnlocked) {
+                        estimateSystemWidgetLoadEntries(page.widgets)
+                    } else {
+                        emptyList()
+                    },
                 ),
             )
         }
 
-        LaunchedEffect(systemWidgetSignature) {
+        LaunchedEffect(systemWidgetSignature, systemPerformanceWidgetUnlocked) {
             systemPerformanceSnapshot = systemPerformanceSnapshot.copy(
-                loadEntries = estimateSystemWidgetLoadEntries(page.widgets),
+                loadEntries = if (systemPerformanceWidgetUnlocked) {
+                    estimateSystemWidgetLoadEntries(page.widgets)
+                } else {
+                    emptyList()
+                },
             )
         }
 
-        LaunchedEffect(page.id, systemWidgetSignature) {
+        LaunchedEffect(page.id, systemWidgetSignature, systemPerformanceWidgetUnlocked) {
+            if (!systemPerformanceWidgetUnlocked) {
+                return@LaunchedEffect
+            }
             val runtime = Runtime.getRuntime()
             var lastWallClockMs = SystemClock.elapsedRealtime()
             var lastCpuMs = Process.getElapsedCpuTime()
@@ -8579,14 +8655,23 @@ private fun DashboardPageLayout(
             } else {
                 widget.title
             }
-            val widgetAlarmActiveRaw = widgetAlarmStateByWidget[widget.id] == true
-            val widgetAlarmMuted = if (widget.kind == WidgetKind.AIS) {
+            val entitlementDecision = RuntimeEntitlementGate.canUseWidget(
+                snapshot = entitlementSnapshot,
+                kind = widget.kind,
+            )
+            val widgetRuntimeLocked = !entitlementDecision.allowed
+            val widgetAlarmActiveRaw = !widgetRuntimeLocked && widgetAlarmStateByWidget[widget.id] == true
+            val widgetAlarmMuted = if (widgetRuntimeLocked) {
+                false
+            } else if (widget.kind == WidgetKind.AIS) {
                 aisSettingsByWidget[widget.id]?.collisionAlarmsMuted == true
             } else {
                 widgetAlarmMutedByWidget[widget.id] == true
             }
             val widgetAlarmActive = widgetAlarmActiveRaw
-            val onWidgetAlarmMute: () -> Unit = if (widget.kind == WidgetKind.AIS) {
+            val onWidgetAlarmMute: () -> Unit = if (widgetRuntimeLocked) {
+                {}
+            } else if (widget.kind == WidgetKind.AIS) {
                 {
                     val current = aisSettingsByWidget.getOrPut(widget.id) { AisWidgetSettings() }
                     val updated = current.copy(collisionAlarmsMuted = !current.collisionAlarmsMuted)
@@ -8788,7 +8873,14 @@ private fun DashboardPageLayout(
                     }
                 }
             ) {
-                when (normalizeChartWidgetKind(widget.kind)) {
+                if (widgetRuntimeLocked) {
+                    LockedWidgetRuntimePlaceholder(
+                        kind = widget.kind,
+                        message = RuntimeEntitlementGate.denialMessage(widget.kind, entitlementDecision),
+                        darkBackground = darkBackground,
+                    )
+                } else {
+                    when (normalizeChartWidgetKind(widget.kind)) {
                     WidgetKind.BATTERY -> {
                         val settings = batterySettingsByWidget.getOrPut(widget.id) { BatteryWidgetSettings() }
                         val value = pickValue(telemetry, widget.dataKeys)
@@ -10025,6 +10117,7 @@ private fun DashboardPageLayout(
                         val value = pickValue(telemetry, widget.dataKeys)
                         EngineRpmWidget(rpm = value)
                     }
+                }
                 }
             }
         }
@@ -16328,6 +16421,7 @@ fun DashboardPagePreview() {
                 recentNmea0183History = emptyList(),
                 dalyDebugEvents = emptyList(),
                 detectedNmeaSources = emptyList(),
+                entitlementSnapshot = EntitlementSnapshot(),
                 titleScale = 1.0f,
             uiFont = UiFont.ORBITRON,
             darkBackground = true,
