@@ -111,7 +111,12 @@ fun parseSeaChartWidgetSettings(serialized: String?): SeaChartWidgetSettings {
 }
 
 internal fun normalizeSeaChartMapProviderName(providerName: String?): SeaChartMapProvider {
-    val migratedName = if (providerName == "OPEN_SEA_MAP") "OPEN_SEA_CHARTS" else providerName
+    val migratedName = when (providerName) {
+        "OPEN_SEA_MAP" -> "OPEN_SEA_CHARTS"
+        "QMAP", "QMAP_DE_ONLINE" -> "QMAP_DE"
+        "OSM", "OSM_FALLBACK", "OSM_STANDARD" -> "OPEN_SEA_CHARTS"
+        else -> providerName
+    }
     val provider = runCatching {
         SeaChartMapProvider.valueOf(migratedName ?: SeaChartMapProvider.NOAA.name)
     }.getOrElse { SeaChartMapProvider.NOAA }

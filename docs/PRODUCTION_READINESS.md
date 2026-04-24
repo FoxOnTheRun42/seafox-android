@@ -23,6 +23,7 @@ seaFOX ist ein fortgeschrittener Alpha-Prototyp mit ernstzunehmendem Kern:
 - Boot-Autostart ist hinter einem zentralen Opt-in-Policy-Gate; Boot, Unlock und verzögerter interner Launch pruefen denselben gespeicherten Nutzerentscheid.
 - Kartenprovider haben ein Capability-/Availability-Modell, damit C-Map/S-63 nicht als nutzbar erscheinen, solange Lizenz/Implementierung fehlen.
 - Persistierte Kartenprovider-Settings werden auf selektierbare Provider normalisiert; C-Map/S-63 fallen ohne Lizenz-/Implementierungspfad auf eine sichere Quelle zurueck.
+- Freie Online-Provider sind als erster Chart-Roadmap-Schritt angebunden: QMAP DE als Raster-Beta fuer deutsche Gewaesser, OpenSeaMap als Seamark-Overlay und OSM nur als interner Online-Fallback ohne Seekartenversprechen.
 - Erststart-Onboarding, Fullscreen-Chart und Datenschutz-/Bootmodus-Einstellungen sind als Produkt-Shell vorhanden.
 - Entitlement-Domainlogik trennt App-Stufen von Kartenlizenzen, bevor Play Billing angeschlossen wird.
 - Billing-Katalog fuer `Pro`, `Navigator` und `Fleet` ist vorbereitet; C-Map/S-63 sind inaktive externe Platzhalter ohne Rechtefreischaltung.
@@ -58,7 +59,7 @@ Noch nicht produktreif:
 - Cockpit UI: Ein klarer Dashboard-Modus, ein Vollbild-Kartenmodus, Bottom-Sheets fuer Kartenoptionen, grosse Tages-/Nacht-Schalter, Touch-Ziele ab 48dp.
 - Status System: Permanente Leiste fuer GPS, NMEA, AIS, Kartenquelle, Offline-Zustand, Alarmstatus und Datenalter.
 - Widget-Editor: Separater Edit-Modus mit Snap-Grid, Sperren, Undo, Presets und Vorlagen fuer Segelboot/Motorboot/Anker.
-- Chart Provider Registry: Einheitliche Provider-Auswahl fuer NOAA/S-57, OpenSeaMap, MBTiles, Tile-Directory, S-63/C-Map als lizenzierte Module.
+- Chart Provider Registry: Einheitliche Provider-Auswahl fuer QMAP DE, NOAA/S-57, OpenSeaMap/OSM-Fallback, MBTiles, Tile-Directory, S-63/C-Map als lizenzierte Module.
 - Kartenpakete: Download-Manager mit Fortschritt, Speicherbedarf, Update-Status, Coverage-Vorschau, Loesch-/Reparaturfunktion.
 - Kurven und Linien: Track-History, COG/SOG-Verlauf, Windkurven, Tiefenkurve, Laylines, Routenlegs, Cross-Track-Korridor und echte Tiefen-/Konturlinien.
 - Navigation Safety: Echte Safety Contour aus Tiefenobjekten, Flachwasser-Warnung, CPA/TCPA-Alarm-Prioritaeten und MOB-Flow mit klarer Ruecknavigation.
@@ -76,6 +77,7 @@ Damit wirklich alle Seekarten und die Kurven sauber angezeigt werden koennen, fe
 - Kurven-Renderer: Linienvereinfachung, Segmentierung, Antimeridian-Handling, Label-Platzierung und Performance-Budget fuer Track, Route, Laylines und Konturlinien.
 - Offline Provider: MBTiles Raster, Vector-Tiles, Tile-Directories und GeoJSON muessen dieselbe Provider-Abstraktion verwenden.
 - Lizenzmodule: S-63/C-Map duerfen erst als bezahltes Produkt erscheinen, wenn Entitlement, Verschluesselung, Zertifikate und Vertragslage geklaert sind.
+- Free Provider: QMAP DE und OpenSeaMap/OSM sind online angebunden, aber nicht offline-fest, nicht amtlich und nicht fuer Navigation. OSM darf nicht per Bulk-Prefetch oder als kommerzielles Seekartenpaket behandelt werden.
 
 ## Monetarisierungsmodell
 

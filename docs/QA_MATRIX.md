@@ -20,6 +20,7 @@ Diese Matrix ist der Produktvertrag zwischen Entwicklung, Design, QA und Release
 | SeaChart | Karte oeffnet ohne Online-Daten | Offline-Style/Land-Fallback sichtbar | Emulator smoke |
 | NOAA/S-57 | ENC-Zelle laden | Depth Areas, Contours, Soundings, Buoys sichtbar | Fixture test + screenshot |
 | Kartenprovider | Persistierte Provider-Settings | C-Map/S-63 werden ohne Lizenz/Implementierung nicht heimlich aktiv | JVM registry/settings test |
+| Free Provider | QMAP DE, OpenSeaMap und OSM-Fallback | QMAP DE nutzt freie Raster-Tiles; OpenSeaMap erzwingt Seamarks auf OSM-Basis; OSM ist kein Seekartenprodukt | JVM free-provider contract + manual network test |
 | MBTiles | Rasterpaket laden | Tiles erscheinen, Zoom/Bounds korrekt | Instrumentation |
 | OpenSeaMap | Seezeichen Overlay | Layer toggelt und laedt korrekt | Manual network test |
 | Kurven | Track, Route, Laylines, COG/SOG, Tiefenkurve | Linien sind stabil, lesbar und performant | Geo JVM + screenshot |
@@ -45,7 +46,7 @@ Diese Matrix ist der Produktvertrag zwischen Entwicklung, Design, QA und Release
 - Vorhanden: `./scripts/seafox-product-check.sh --ci` fuer statische Projektgesundheit, Compile, JVM-Tests und Lint.
 - Vorhanden: `./scripts/seafox-product-check.sh --ci --release-r8` fuer Release-Minify/R8 ohne signiertes Artefakt.
 - Vorhanden: `./scripts/seafox-device-smoke.sh` fuer nicht-destruktiven adb-Smoke mit optionaler Installation einer vorhandenen APK, App-Start, Screenshot, UI-Dump und Logcat-Capture.
-- Vorhanden: JVM-Tests fuer `GeoCalc`, Boot-Autostart-Policy, Autopilot-Safety-Gate, Backup-Privacy, Chart-Provider-Verfuegbarkeit, persistierte SeaChart-Provider-Normalisierung, Hazard-Depth-Filter, Safety-Contour-Policy, Entitlement-Policy, Feature-Access-Policy, Billing-Katalog, Billing-Restore-Mapping, lokalen Crash-Report-Formatter und Support-Diagnose-Export.
+- Vorhanden: JVM-Tests fuer `GeoCalc`, Boot-Autostart-Policy, Autopilot-Safety-Gate, Backup-Privacy, Chart-Provider-Verfuegbarkeit, Free-Raster-Provider-Vertraege, persistierte SeaChart-Provider-Normalisierung inklusive JSON-Parsing, Hazard-Depth-Filter, Safety-Contour-Policy, Entitlement-Policy, Feature-Access-Policy, Billing-Katalog, Billing-Restore-Mapping, lokalen Crash-Report-Formatter und Support-Diagnose-Export.
 - Vorhanden: Erststart-Onboarding und Fullscreen-Chart im Compose-Code; noch ohne Emulator-/Device-Nachweis.
 - Hinweis: Das Device-Smoke-Script fuehrt keine Gradle-Tasks aus und loest damit keine Buildnummern-Inkremente aus; eine APK muss bei Bedarf bereits vorhanden sein.
 - Fehlend: Echte Emulator-/Device-Nachweise im aktuellen Workspace, solange kein adb-faehiges Device angeschlossen ist.

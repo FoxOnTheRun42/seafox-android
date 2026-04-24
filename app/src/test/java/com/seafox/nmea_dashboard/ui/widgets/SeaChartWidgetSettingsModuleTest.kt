@@ -20,6 +20,26 @@ class SeaChartWidgetSettingsModuleTest {
     }
 
     @Test
+    fun normalizesLegacyQmapProviderName() {
+        assertEquals(SeaChartMapProvider.QMAP_DE, normalizeSeaChartMapProviderName("QMAP"))
+        assertEquals(SeaChartMapProvider.QMAP_DE, normalizeSeaChartMapProviderName("QMAP_DE_ONLINE"))
+    }
+
+    @Test
+    fun normalizesLegacyOsmProviderNameToOpenSeaCharts() {
+        assertEquals(SeaChartMapProvider.OPEN_SEA_CHARTS, normalizeSeaChartMapProviderName("OSM"))
+        assertEquals(SeaChartMapProvider.OPEN_SEA_CHARTS, normalizeSeaChartMapProviderName("OSM_FALLBACK"))
+        assertEquals(SeaChartMapProvider.OPEN_SEA_CHARTS, normalizeSeaChartMapProviderName("OSM_STANDARD"))
+    }
+
+    @Test
+    fun parsesLegacyQmapSettingsToSelectableProvider() {
+        val settings = parseSeaChartWidgetSettings("""{"mapProvider":"QMAP"}""")
+
+        assertEquals(SeaChartMapProvider.QMAP_DE, settings.mapProvider)
+    }
+
+    @Test
     fun normalizesUnknownOrMissingProvidersToSafeFallback() {
         assertEquals(SeaChartMapProvider.NOAA, normalizeSeaChartMapProviderName("NAVIONICS"))
         assertEquals(SeaChartMapProvider.NOAA, normalizeSeaChartMapProviderName(null))

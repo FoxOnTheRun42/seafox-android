@@ -34,7 +34,7 @@ sources:
 
 ## Charts / Navigation
 
-- Welche Kartenquelle wird zuerst als rechtlich saubere Offline-Quelle priorisiert?
+- Welche Kartenquelle wird nach Task 01 als rechtlich saubere Offline-Quelle priorisiert? Aktuelle Entscheidung: MBTiles/GeoPackage Side-Loading ist Task 02; QMAP DE/OpenSeaMap/OSM bleiben Online-Provider ohne Navigationsversprechen.
 - Wie stark soll S-52-nahe Symbolisierung vor der ersten Beta sein?
 - Welche reale ENC-Zelle dient als Safety-Contour-Referenz?
 - Wann wird die bestehende ChartProvider-Abstraktion voll genutzt statt direkter Verdrahtung?

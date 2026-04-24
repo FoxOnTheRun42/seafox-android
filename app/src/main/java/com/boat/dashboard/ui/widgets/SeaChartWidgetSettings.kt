@@ -2,6 +2,7 @@ package com.seafox.nmea_dashboard.ui.widgets
 
 enum class SeaChartMapProvider(val label: String) {
     NOAA("NOAA"),
+    QMAP_DE("QMAP DE"),
     S57("S-57"),
     S63("S-63"),
     OPEN_SEA_CHARTS("OpenSeaCharts"),

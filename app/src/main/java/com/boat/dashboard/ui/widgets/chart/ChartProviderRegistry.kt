@@ -51,6 +51,14 @@ object ChartProviderRegistry {
                 ),
                 userNotice = "NOAA/S-57 ist als Beta verfuegbar; Darstellung ist nicht ECDIS-zertifiziert.",
             )
+            SeaChartMapProvider.QMAP_DE -> ChartProviderDescriptor(
+                provider = provider,
+                availability = FeatureAvailability.beta,
+                capabilities = setOf(
+                    ChartProviderCapability.rasterTiles,
+                ),
+                userNotice = "QMAP DE ist als freie Online-Rasterkarte fuer deutsche Gewaesser verfuegbar; nicht fuer Navigation.",
+            )
             SeaChartMapProvider.S57 -> ChartProviderDescriptor(
                 provider = provider,
                 availability = FeatureAvailability.beta,

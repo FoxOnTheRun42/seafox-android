@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Chart Roadmap Task 01 free providers
+
+- Sources: `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FreeRasterChartProviders.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartProviderRegistry.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartWidget.kt`, `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/THIRD_PARTY_NOTICES.md`
+- Updated: `wiki/modules/chart-system.md`, `wiki/modules/production-and-qa.md`, `wiki/open-questions.md`, `wiki/index.md`, `wiki/log.md`
+- Notes: Task 01 der Chart Roadmap umgesetzt: QMAP DE als freie Online-Raster-Beta, OpenSeaCharts mit internem OSM-Fallback plus erzwungenem OpenSeaMap-Seamark-Overlay, OSM bewusst nicht als eigener Seekartenprovider. Gezielter JVM-Check fuer Provider-Registry, FreeRaster-Vertraege und Settings-Normalisierung ist gruen; volles `./scripts/seafox-product-check.sh --ci --release-r8` ist ebenfalls gruen. Device-/Emulator-QA bleibt blockiert, weil `adb` nicht installiert ist.
+
 ## [2026-04-24] refresh | Productization, chart truth and release gates
 
 - Sources: `../runs/20260424-095641-ceo-sync/brief.md`, `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/RELEASE_CHECKLIST.md`, `../docs/PRIVACY_POLICY_DRAFT.md`, `../docs/SAFETY_DISCLAIMER_DRAFT.md`, `../app/src/main/java/com/boat/dashboard/**`, `../app/src/test/**`

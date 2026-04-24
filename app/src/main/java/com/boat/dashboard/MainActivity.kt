@@ -222,6 +222,7 @@ import com.seafox.nmea_dashboard.ui.widgets.SeaChartWidgetSettings
 import com.seafox.nmea_dashboard.ui.widgets.chart.ChartWidget
 import com.seafox.nmea_dashboard.ui.widgets.chart.ChartProviderRegistry
 import com.seafox.nmea_dashboard.ui.widgets.chart.Catalog031Parser
+import com.seafox.nmea_dashboard.ui.widgets.chart.FreeRasterChartProviders
 import com.seafox.nmea_dashboard.ui.widgets.chart.GeoBounds
 import com.seafox.nmea_dashboard.ui.widgets.chart.NauticalOverlayOptions
 import com.seafox.nmea_dashboard.ui.widgets.chart.NavigationVectorSettings
@@ -1676,11 +1677,21 @@ private val SEA_CHART_C_MAP_RECOGNIZED_EXTENSIONS = setOf(
 )
 private val SEA_CHART_NOAA_RECOGNIZED_EXTENSIONS = SEA_CHART_OPEN_SEA_CHARTS_RECOGNIZED_EXTENSIONS
     .plus(setOf("000", "001", "002", "txt"))
+private val SEA_CHART_QMAP_DE_RECOGNIZED_EXTENSIONS = setOf(
+    "mbtiles",
+    "sqlitedb",
+    "png",
+    "jpg",
+    "jpeg",
+    "webp",
+)
 private const val NOAA_ENC_CATALOG_URL = "https://charts.noaa.gov/ENCs/ENCs.shtml"
 private const val NOAA_ENC_HOME_URL = "https://nauticalcharts.noaa.gov/charts/noaa-enc.html"
 private const val NOAA_RNC_KMZ_URL = "https://marineregions.org/encdirect?source=noaa"
 private const val NOAA_ENC_ZIP_BASE_URL = "https://charts.noaa.gov/ENCs/"
 private const val C_MAP_DOCUMENTATION_URL = "https://www.c-map.com/all-charts/"
+private const val FREE_NAUTICAL_CHART_DOWNLOAD_URL = "https://freenauticalchart.net/download/"
+private const val FREE_NAUTICAL_CHART_QMAP_DE_MBTILES_URL = "https://freenauticalchart.net/download/qmap-de.mbtiles"
 // S-57 freie Quellen weltweit
 private const val CHS_ENC_URL = "https://www.charts.gc.ca/charts-cartes/enc-cnc-eng.html"
 private const val LINZ_ENC_URL = "https://www.linz.govt.nz/products-services/hydrographic/hydrographic-charts"
@@ -1691,6 +1702,7 @@ private const val IC_ENC_URL = "https://www.ic-enc.org"
 private const val AVCS_URL = "https://www.admiralty.co.uk/digital-services/digital-charts/admiralty-vector-chart-service"
 private enum class SeaChartDownloadCatalog(val buttonLabel: String) {
     C_MAP("C-Map"),
+    QMAP_DE("QMAP DE"),
     OPEN_SEA_CHARTS("OpenSeaCharts"),
     NOAA("NOAA"),
     S57("S-57"),
@@ -1703,6 +1715,9 @@ private val SEA_CHART_OPEN_SEA_CHARTS_DOWNLOAD_RESOURCES = listOf(
     Triple("OpenSeaMap OpenCPN", OPENSEAMAP_OPENCPN_PAGE_URL, "Offizieller Überblick mit Install- und Integrationshinweisen"),
 )
 private val SEA_CHART_C_MAP_DOWNLOAD_RESOURCES = emptyList<Triple<String, String, String>>()
+private val SEA_CHART_QMAP_DE_DOWNLOAD_RESOURCES = listOf(
+    Triple("Free Nautical Chart Downloads", FREE_NAUTICAL_CHART_DOWNLOAD_URL, "QMAP DE Online-Quelle und MBTiles-Vorbereitung mit Lizenz- und Safety-Hinweisen"),
+)
 private val SEA_CHART_NOAA_DOWNLOAD_RESOURCES = listOf(
     Triple("NOAA ENC-Kartenportal", NOAA_ENC_CATALOG_URL, "Offizielles NOAA-Portal mit ENC-Katalog und Downloadoptionen"),
     Triple("NOAA ENC-Hinweise", NOAA_ENC_HOME_URL, "Übersicht zu NOAA ENCs, Verfügbarkeit und Nutzungshinweisen"),
@@ -1778,9 +1793,17 @@ private val SEA_CHART_US_CHART_DOWNLOAD_RESOURCES = listOf(
     Triple("AT5-FTP (manuelle US-Regionen)", OPENSEAMAP_AT5_RAWDATA_URL, "Direktes Verzeichnis für US-AT5-Zip-Dateien im Dateimanager"),
 )
 private val SEA_CHART_C_MAP_REGION_DOWNLOADS = emptyList<Triple<String, String, String>>()
+private val SEA_CHART_QMAP_DE_REGION_DOWNLOADS = listOf(
+    Triple(
+        "QMAP DE MBTiles",
+        FREE_NAUTICAL_CHART_QMAP_DE_MBTILES_URL,
+        "Freie QMAP-DE Rasterkarte fuer deutsche Gewaesser (~816 MB); Vorbereitung fuer Offline-Import, nicht fuer Navigation",
+    ),
+)
 
 private fun seaChartDownloadCatalogRegions(catalog: SeaChartDownloadCatalog): List<Triple<String, String, String>> = when (catalog) {
     SeaChartDownloadCatalog.C_MAP -> SEA_CHART_C_MAP_REGION_DOWNLOADS
+    SeaChartDownloadCatalog.QMAP_DE -> SEA_CHART_QMAP_DE_REGION_DOWNLOADS
     SeaChartDownloadCatalog.OPEN_SEA_CHARTS -> SEA_CHART_OPEN_SEA_CHARTS_REGION_DOWNLOADS
     SeaChartDownloadCatalog.NOAA -> SEA_CHART_NOAA_REGION_DOWNLOADS
     SeaChartDownloadCatalog.S57 -> SEA_CHART_S57_REGION_DOWNLOADS
@@ -1790,6 +1813,7 @@ private fun seaChartDownloadCatalogRegions(catalog: SeaChartDownloadCatalog): Li
 
 private fun seaChartDownloadCatalogResources(catalog: SeaChartDownloadCatalog): List<Triple<String, String, String>> = when (catalog) {
     SeaChartDownloadCatalog.C_MAP -> SEA_CHART_C_MAP_DOWNLOAD_RESOURCES
+    SeaChartDownloadCatalog.QMAP_DE -> SEA_CHART_QMAP_DE_DOWNLOAD_RESOURCES
     SeaChartDownloadCatalog.OPEN_SEA_CHARTS -> SEA_CHART_OPEN_SEA_CHARTS_DOWNLOAD_RESOURCES
     SeaChartDownloadCatalog.NOAA -> SEA_CHART_NOAA_DOWNLOAD_RESOURCES
     SeaChartDownloadCatalog.S57 -> SEA_CHART_S57_DOWNLOAD_RESOURCES
@@ -1799,6 +1823,7 @@ private fun seaChartDownloadCatalogResources(catalog: SeaChartDownloadCatalog): 
 
 private fun seaChartDownloadCatalogProvider(catalog: SeaChartDownloadCatalog): SeaChartMapProvider = when (catalog) {
     SeaChartDownloadCatalog.C_MAP -> SeaChartMapProvider.C_MAP
+    SeaChartDownloadCatalog.QMAP_DE -> SeaChartMapProvider.QMAP_DE
     SeaChartDownloadCatalog.OPEN_SEA_CHARTS -> SeaChartMapProvider.OPEN_SEA_CHARTS
     SeaChartDownloadCatalog.NOAA -> SeaChartMapProvider.NOAA
     SeaChartDownloadCatalog.S57 -> SeaChartMapProvider.S57
@@ -1808,6 +1833,7 @@ private fun seaChartDownloadCatalogProvider(catalog: SeaChartDownloadCatalog): S
 
 private fun seaChartDocumentationUrl(mapProvider: SeaChartMapProvider): String = when (mapProvider) {
     SeaChartMapProvider.C_MAP -> C_MAP_DOCUMENTATION_URL
+    SeaChartMapProvider.QMAP_DE -> FREE_NAUTICAL_CHART_DOWNLOAD_URL
     SeaChartMapProvider.OPEN_SEA_CHARTS -> OPENSEAMAP_OPENCPN_PAGE_URL
     SeaChartMapProvider.NOAA -> NOAA_ENC_HOME_URL
     SeaChartMapProvider.S57 -> CHS_ENC_URL
@@ -1816,6 +1842,7 @@ private fun seaChartDocumentationUrl(mapProvider: SeaChartMapProvider): String =
 
 private fun seaChartDownloadCatalogForProvider(mapProvider: SeaChartMapProvider): SeaChartDownloadCatalog = when (mapProvider) {
     SeaChartMapProvider.C_MAP -> SeaChartDownloadCatalog.C_MAP
+    SeaChartMapProvider.QMAP_DE -> SeaChartDownloadCatalog.QMAP_DE
     SeaChartMapProvider.OPEN_SEA_CHARTS -> SeaChartDownloadCatalog.OPEN_SEA_CHARTS
     SeaChartMapProvider.NOAA -> SeaChartDownloadCatalog.NOAA
     SeaChartMapProvider.S57 -> SeaChartDownloadCatalog.S57
@@ -1824,6 +1851,7 @@ private fun seaChartDownloadCatalogForProvider(mapProvider: SeaChartMapProvider)
 
 private fun seaChartDownloadCatalogDialogTitle(catalog: SeaChartDownloadCatalog): String = when (catalog) {
     SeaChartDownloadCatalog.C_MAP -> "C-Map Karten herunterladen"
+    SeaChartDownloadCatalog.QMAP_DE -> "QMAP DE Karten herunterladen"
     SeaChartDownloadCatalog.OPEN_SEA_CHARTS -> "OpenSeaCharts Karten herunterladen"
     SeaChartDownloadCatalog.NOAA -> "NOAA Karten herunterladen"
     SeaChartDownloadCatalog.S57 -> "S-57 Karten herunterladen"
@@ -1835,6 +1863,10 @@ private fun seaChartDownloadCatalogDescription(catalog: SeaChartDownloadCatalog)
     SeaChartDownloadCatalog.C_MAP ->
         "Für C-Map werden lokale Kacheldaten oder kompatible Kartendateien benötigt. " +
             "Im Moment gibt es hierfür keine integrierten frei downloadbaren Quellen."
+    SeaChartDownloadCatalog.QMAP_DE ->
+        "QMAP DE bietet eine freie Online-Rasterkarte fuer deutsche Gewaesser. " +
+            "MBTiles-Downloads werden als Vorbereitung fuer den naechsten Offline-Import-Schritt angeboten. " +
+            "Die Quelle ist fuer Information, Referenz und Training gedacht und ersetzt keine amtliche Navigation."
     SeaChartDownloadCatalog.OPEN_SEA_CHARTS ->
         "OpenSeaCharts bietet kostenlose MBTiles-Seekarten mit Basiskarte und Seezeichen. " +
             "Wähle eine Region zum direkten Download. Die Dateien sind sofort offline nutzbar. " +
@@ -1856,6 +1888,7 @@ private fun seaChartDownloadCatalogDescription(catalog: SeaChartDownloadCatalog)
 private const val SEA_CHART_OFFLINE_CACHE_SUBFOLDER = "seaCHART"
 private const val SEA_CHART_OPEN_SEA_CHARTS_PROVIDER_SUBFOLDER = "openSeaChart"
 private const val SEA_CHART_C_MAP_PROVIDER_SUBFOLDER = "c-map"
+private const val SEA_CHART_QMAP_DE_PROVIDER_SUBFOLDER = "qmap-de"
 private const val SEA_CHART_NOAA_PROVIDER_SUBFOLDER = "noaa"
 private const val SEA_CHART_S57_PROVIDER_SUBFOLDER = "s57"
 private const val SEA_CHART_S63_PROVIDER_SUBFOLDER = "s63"
@@ -2280,6 +2313,7 @@ private fun seaChartDownloadFileName(label: String, url: String): String {
 private fun seaChartProviderSubfolder(mapProvider: SeaChartMapProvider): String {
     return when (mapProvider) {
         SeaChartMapProvider.C_MAP -> SEA_CHART_C_MAP_PROVIDER_SUBFOLDER
+        SeaChartMapProvider.QMAP_DE -> SEA_CHART_QMAP_DE_PROVIDER_SUBFOLDER
         SeaChartMapProvider.OPEN_SEA_CHARTS -> SEA_CHART_OPEN_SEA_CHARTS_PROVIDER_SUBFOLDER
         SeaChartMapProvider.NOAA -> SEA_CHART_NOAA_PROVIDER_SUBFOLDER
         SeaChartMapProvider.S57 -> SEA_CHART_S57_PROVIDER_SUBFOLDER
@@ -3609,6 +3643,7 @@ private fun isSeaChartNativePreviewFile(file: File, mapProvider: SeaChartMapProv
     val extension = file.extension.lowercase()
     return when (mapProvider) {
         SeaChartMapProvider.OPEN_SEA_CHARTS -> extension == "shp"
+        SeaChartMapProvider.QMAP_DE -> false
         SeaChartMapProvider.NOAA, SeaChartMapProvider.S57, SeaChartMapProvider.S63 ->
             extension == "txt" || isThreeDigitNoaaIndexExtension(extension)
         SeaChartMapProvider.C_MAP -> false
@@ -3763,6 +3798,10 @@ private fun seaChartDirectoryLooksLikeProviderDirectory(
                 name.contains("open sea") ||
                 name.contains("openchart") ||
                 name.contains("opensea chart")
+        SeaChartMapProvider.QMAP_DE ->
+            name.contains("qmap") ||
+                name.contains("free nautical") ||
+                name.contains("freenauticalchart")
         SeaChartMapProvider.C_MAP ->
             name.contains("cmap") ||
                 name.contains("c-map") ||
@@ -3799,6 +3838,8 @@ private fun isSeaChartFile(file: File, mapProvider: SeaChartMapProvider): Boolea
     return when (mapProvider) {
         SeaChartMapProvider.OPEN_SEA_CHARTS ->
             extension in SEA_CHART_OPEN_SEA_CHARTS_RECOGNIZED_EXTENSIONS || name.endsWith(".zip")
+        SeaChartMapProvider.QMAP_DE ->
+            extension in SEA_CHART_QMAP_DE_RECOGNIZED_EXTENSIONS || name.endsWith(".zip")
         SeaChartMapProvider.C_MAP ->
             extension in SEA_CHART_C_MAP_RECOGNIZED_EXTENSIONS || name.endsWith(".zip")
         SeaChartMapProvider.NOAA, SeaChartMapProvider.S57, SeaChartMapProvider.S63 ->
@@ -3811,6 +3852,7 @@ private fun isSeaChartRenderableFile(file: File, mapProvider: SeaChartMapProvide
     val extension = file.extension.lowercase()
     return when (mapProvider) {
         SeaChartMapProvider.OPEN_SEA_CHARTS,
+        SeaChartMapProvider.QMAP_DE,
         SeaChartMapProvider.C_MAP,
         SeaChartMapProvider.NOAA,
         SeaChartMapProvider.S57,
@@ -3827,6 +3869,7 @@ private fun seaChartSourceCompatibilityNote(file: File, mapProvider: SeaChartMap
         return when (mapProvider) {
             SeaChartMapProvider.OPEN_SEA_CHARTS ->
                 "Native Vorschau aus Shapefile-Basisdaten aktiv"
+            SeaChartMapProvider.QMAP_DE -> null
             SeaChartMapProvider.NOAA, SeaChartMapProvider.S57, SeaChartMapProvider.S63 ->
                 "Native Vorschau aus ENC-Basisdaten aktiv"
             SeaChartMapProvider.C_MAP -> null
@@ -3864,6 +3907,8 @@ private fun seaChartDisplayStatusMessage(
         val previewReason = when (mapProvider) {
             SeaChartMapProvider.OPEN_SEA_CHARTS ->
                 "Anzeigegrund: Shapefile-Basisdaten gefunden. Die App zeigt dafür aktuell eine native Vorschau."
+            SeaChartMapProvider.QMAP_DE ->
+                "Anzeigegrund: QMAP-DE-Basisdaten gefunden. Die App behandelt sie als Rasterquelle."
             SeaChartMapProvider.NOAA, SeaChartMapProvider.S57, SeaChartMapProvider.S63 ->
                 "Anzeigegrund: ENC-Basisdaten gefunden. Die App zeigt dafür aktuell eine native Vorschau."
             SeaChartMapProvider.C_MAP ->
@@ -4363,6 +4408,7 @@ private fun seaChartLocalTileTemplateFromSource(source: File): String? {
 
 private fun seaChartProviderDisplayName(mapProvider: SeaChartMapProvider): String = when (mapProvider) {
     SeaChartMapProvider.C_MAP -> "C-Map"
+    SeaChartMapProvider.QMAP_DE -> "QMAP DE"
     SeaChartMapProvider.OPEN_SEA_CHARTS -> "OpenSeaCharts"
     SeaChartMapProvider.NOAA -> "NOAA"
     SeaChartMapProvider.S57 -> "S-57"
@@ -8886,8 +8932,8 @@ private fun DashboardPageLayout(
                             var kartenViewportCenterLon by remember(widget.id) { mutableStateOf<Double?>(null) }
                             var kartenZoomBucket by remember(widget.id) { mutableIntStateOf(10) }
                             val initialKartenSourcePair = remember(widget.id, kartenOfflineReloadRequest, provider) {
-                                if (provider == SeaChartMapProvider.OPEN_SEA_CHARTS) {
-                                    return@remember "OpenSeaMap Seamarks" to null
+                                FreeRasterChartProviders.displayLabelFor(provider)?.let { label ->
+                                    return@remember label to null
                                 }
                                 // Fast path: grab first .000 candidate without expensive stat calls.
                                 // Full preferred-path resolution happens in LaunchedEffect on IO thread.
@@ -8918,8 +8964,8 @@ private fun DashboardPageLayout(
                                 kartenZoomBucket,
                             ) {
                                 val resolved = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                    if (provider == SeaChartMapProvider.OPEN_SEA_CHARTS) {
-                                        return@withContext "OpenSeaMap Seamarks" to null
+                                    FreeRasterChartProviders.displayLabelFor(provider)?.let { label ->
+                                        return@withContext label to null
                                     }
                                     val sourcePath = activeSeaChartSourcePath(
                                         context = context,
@@ -8949,15 +8995,14 @@ private fun DashboardPageLayout(
                                 ownHeadingDeg = aisOwnHeadingDeg ?: ownCourseOverGroundDeg,
                                 ownCourseOverGroundDeg = ownCourseOverGroundDeg,
                                 ownSpeedKn = ownSpeedKn,
-                                activeMapSourceLabel = if (provider == SeaChartMapProvider.OPEN_SEA_CHARTS) {
-                                    "OpenSeaMap Seamarks"
-                                } else {
-                                    activeKartenSourceText
-                                },
-                                activeMapSourcePath = if (provider == SeaChartMapProvider.OPEN_SEA_CHARTS) null else activeKartenSourcePath,
+                                mapProvider = provider,
+                                activeMapSourceLabel = FreeRasterChartProviders.displayLabelFor(provider)
+                                    ?: activeKartenSourceText,
+                                activeMapSourcePath = if (FreeRasterChartProviders.hasOnlineBaseLayer(provider)) null else activeKartenSourcePath,
                                 aisTargets = cachedAisTargetsByWidget.values.map { it.target },
                                 showAisOverlay = settings.showAisOverlay,
-                                showOpenSeaMapOverlay = settings.showOpenSeaMapOverlay || provider == SeaChartMapProvider.OPEN_SEA_CHARTS,
+                                showOpenSeaMapOverlay = settings.showOpenSeaMapOverlay ||
+                                    FreeRasterChartProviders.shouldForceSeamarkOverlay(provider),
                                 navigationSettings = NavigationVectorSettings(
                                     showHeadingLine = settings.showHeadingLine,
                                     headingLineLengthNm = settings.headingLineLengthNm,

@@ -29,6 +29,8 @@ sources:
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/BootAutostartPolicyTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/data/FeatureAccessPolicyTest.kt
   - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/HazardOverlayBuilderTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/FreeRasterChartProvidersTest.kt
+  - ../../../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/SeaChartWidgetSettingsModuleTest.kt
 ---
 
 # Production and QA
@@ -49,6 +51,8 @@ Quelle: `runs/20260424-095641-ceo-sync/brief.md`, danach im Wiki-Refresh erneut 
 - `app/build.gradle.kts` aktiviert im Release-Build `isMinifyEnabled = true` und `isShrinkResources = true`; Release-Signing wird nur gesetzt, wenn alle `SEAFOX_RELEASE_*`-Umgebungsvariablen vorhanden sind.
 - `adb` ist lokal nicht installiert. Deshalb wurde keine Emulator- oder Device-QA ausgefuehrt; `--device` waere in dieser Umgebung blockiert.
 - Nach der Produktionshaertung wurde `./scripts/seafox-product-check.sh --ci --release-r8` lokal ausgefuehrt und bestand Compile, JVM-Tests, Lint und `:app:minifyReleaseWithR8`. Ein signiertes Store-Artefakt wurde dadurch nicht erzeugt.
+- Nach Chart Roadmap Task 01 wurde der gezielte JVM-Provider-Check gruen ausgefuehrt: `./gradlew :app:testDebugUnitTest --tests '*ChartProviderRegistryTest' --tests '*FreeRasterChartProvidersTest' --tests '*SeaChartWidgetSettingsModuleTest'`.
+- Nach Chart Roadmap Task 01 wurde auch das volle lokale Product Gate mit Release-R8 gruen ausgefuehrt: `./scripts/seafox-product-check.sh --ci --release-r8`. `adb` fehlt weiterhin, deshalb wurde keine Emulator-/Device-QA ausgefuehrt.
 - Ergebnis: Build-/Unit-/Lint-Status ist gruen; Runtime-, Store- und kommerzielle Release-Faehigkeit sind noch nicht belegt.
 - `docs/RELEASE_CHECKLIST.md` verlangt fuer Store-Kandidaten zusaetzlich `--release-r8`, dokumentierte Phone- und Tablet-QA, Signing-Konfiguration, Store-Wahrheit und Rollback-Artefakte.
 
@@ -82,7 +86,9 @@ Vorhanden in `app/src/test` am 2026-04-24:
 - `EntitlementPolicyTest`: Free/Pro/Navigator/Fleet-Featurelogik, getrennte Chart-Provider-Lizenzen und Ablaufdatum.
 - `FeatureAccessPolicyTest`: Widgets und Premiumfunktionen werden Free/Pro/Navigator/Fleet-Features zugeordnet.
 - `SupportDiagnosticsBuilderTest`: Redaction, optionale sensitive Felder, stabile JSON-Felder, Seiten-/Widget-/Safety-Zusammenfassung und JSON-Datei-Export in ein bereitgestelltes Verzeichnis. Ein user-facing Share-/Export-Flow ist damit noch nicht bewiesen.
-- `ChartProviderRegistryTest`: NOAA/S-57/OpenSeaCharts als selektierbar oder beta, C-MAP lizenzpflichtig, S-63 nicht implementiert.
+- `ChartProviderRegistryTest`: NOAA/QMAP DE/S-57/OpenSeaCharts als selektierbar oder beta, C-MAP lizenzpflichtig, S-63 nicht implementiert.
+- `FreeRasterChartProvidersTest`: QMAP-DE-Tilevertrag, OpenSeaCharts mit OSM-Fallback plus erzwungenem Seamark-Overlay und kein Free-Raster-Override fuer NOAA.
+- `SeaChartWidgetSettingsModuleTest`: persistierte Provider-Normalisierung inklusive legacy QMAP, OSM und JSON-Parsing mit echter JVM-JSON-Bibliothek.
 - `SafetyContourPolicyTest`: Safety-Depth-Berechnung und Filterung von DEPARE, DEPCNT und SOUNDG.
 - `HazardOverlayBuilderTest`: DEPARE/DEPCNT/SOUNDG-Fixtures, `kind`-Fallback, Tiefenalias-Felder, `DRVAL2`-Fallback und Non-Depth/invalid-depth-Ablehnung.
 

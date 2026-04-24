@@ -14,10 +14,25 @@ class ChartProviderRegistryTest {
         val selectable = ChartProviderRegistry.selectableProviders()
 
         assertTrue(SeaChartMapProvider.NOAA in selectable)
+        assertTrue(SeaChartMapProvider.QMAP_DE in selectable)
         assertTrue(SeaChartMapProvider.S57 in selectable)
         assertTrue(SeaChartMapProvider.OPEN_SEA_CHARTS in selectable)
         assertFalse(SeaChartMapProvider.C_MAP in selectable)
         assertFalse(SeaChartMapProvider.S63 in selectable)
+    }
+
+    @Test
+    fun selectableProvidersMatchRegistryAvailabilityContract() {
+        val selectable = ChartProviderRegistry.selectableProviders()
+
+        selectable.forEach { provider ->
+            assertTrue(ChartProviderRegistry.descriptor(provider).canSelect)
+        }
+        SeaChartMapProvider.entries
+            .map { provider -> ChartProviderRegistry.normalizedSelectableProvider(provider) }
+            .forEach { normalizedProvider ->
+                assertTrue(normalizedProvider in selectable)
+            }
     }
 
     @Test
@@ -44,6 +59,27 @@ class ChartProviderRegistryTest {
 
         assertEquals(FeatureAvailability.beta, descriptor.availability)
         assertTrue(ChartProviderCapability.s57Enc in descriptor.capabilities)
+        assertTrue(ChartProviderCapability.offlinePackages in descriptor.capabilities)
+    }
+
+    @Test
+    fun qmapDeBetaAdvertisesRasterTilesOnly() {
+        val descriptor = ChartProviderRegistry.descriptor(SeaChartMapProvider.QMAP_DE)
+
+        assertEquals(FeatureAvailability.beta, descriptor.availability)
+        assertTrue(descriptor.canSelect)
+        assertTrue(ChartProviderCapability.rasterTiles in descriptor.capabilities)
+        assertFalse(ChartProviderCapability.s57Enc in descriptor.capabilities)
+        assertFalse(ChartProviderCapability.s63Encrypted in descriptor.capabilities)
+    }
+
+    @Test
+    fun openSeaChartsAdvertisesRasterOverlayContract() {
+        val descriptor = ChartProviderRegistry.descriptor(SeaChartMapProvider.OPEN_SEA_CHARTS)
+
+        assertEquals(FeatureAvailability.available, descriptor.availability)
+        assertTrue(descriptor.canSelect)
+        assertTrue(ChartProviderCapability.rasterTiles in descriptor.capabilities)
         assertTrue(ChartProviderCapability.offlinePackages in descriptor.capabilities)
     }
 

@@ -38,6 +38,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.seafox.nmea_dashboard.SeaFoxDesignTokens
 import com.seafox.nmea_dashboard.ui.widgets.AisTargetData
+import com.seafox.nmea_dashboard.ui.widgets.SeaChartMapProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.maplibre.android.MapLibre
@@ -66,6 +67,7 @@ fun ChartWidget(
     ownHeadingDeg: Float? = null,
     ownCourseOverGroundDeg: Float? = null,
     ownSpeedKn: Float? = null,
+    mapProvider: SeaChartMapProvider = SeaChartMapProvider.NOAA,
     activeMapSourceLabel: String?,
     activeMapSourcePath: String?,
     aisTargets: List<AisTargetData> = emptyList(),
@@ -120,6 +122,7 @@ fun ChartWidget(
                     ownHeadingDeg = ownHeadingDeg,
                     ownCourseOverGroundDeg = ownCourseOverGroundDeg,
                     ownSpeedKn = ownSpeedKn,
+                    mapProvider = mapProvider,
                     activeMapSourceLabel = activeMapSourceLabel,
                     activeMapSourcePath = activeMapSourcePath,
                     aisTargets = aisTargets,
@@ -234,9 +237,16 @@ fun ChartWidget(
         )
     }
 
-    LaunchedEffect(showOpenSeaMapOverlay, currentStyle) {
+    LaunchedEffect(mapProvider, currentStyle) {
         val style = currentStyle ?: return@LaunchedEffect
-        OpenSeaMapOverlay.update(style, enabled = showOpenSeaMapOverlay)
+        FreeRasterChartProviders.updateBaseLayer(style, mapProvider)
+    }
+
+    LaunchedEffect(showOpenSeaMapOverlay, mapProvider, currentStyle) {
+        val style = currentStyle ?: return@LaunchedEffect
+        val seamarkOverlayEnabled = showOpenSeaMapOverlay ||
+            FreeRasterChartProviders.shouldForceSeamarkOverlay(mapProvider)
+        OpenSeaMapOverlay.update(style, enabled = seamarkOverlayEnabled)
     }
 
     // Load offline MBTiles when available
@@ -288,11 +298,14 @@ fun ChartWidget(
             currentStyle = style
             configureMapUi(map)
             // Re-apply overlays after style change
+            FreeRasterChartProviders.updateBaseLayer(style, mapProvider)
             if (showAisOverlay) {
                 AisOverlay.setup(style)
                 AisOverlay.update(style, aisTargets)
             }
-            OpenSeaMapOverlay.update(style, enabled = showOpenSeaMapOverlay)
+            val seamarkOverlayEnabled = showOpenSeaMapOverlay ||
+                FreeRasterChartProviders.shouldForceSeamarkOverlay(mapProvider)
+            OpenSeaMapOverlay.update(style, enabled = seamarkOverlayEnabled)
             val mbtilesSource = offlineSources.firstOrNull { it.type == OfflineChartType.MBTILES }
             if (mbtilesSource != null) {
                 OfflineTileManager.addMbTilesLayer(style, mbtilesSource)
@@ -323,10 +336,13 @@ fun ChartWidget(
                         map.setStyle(initBuilder) { style ->
                             currentStyle = style
                             configureMapUi(map)
+                            FreeRasterChartProviders.updateBaseLayer(style, mapProvider)
                             if (showAisOverlay) {
                                 AisOverlay.setup(style)
                             }
-                            OpenSeaMapOverlay.update(style, enabled = showOpenSeaMapOverlay)
+                            val seamarkOverlayEnabled = showOpenSeaMapOverlay ||
+                                FreeRasterChartProviders.shouldForceSeamarkOverlay(mapProvider)
+                            OpenSeaMapOverlay.update(style, enabled = seamarkOverlayEnabled)
                         }
                         map.cameraPosition = CameraPosition.Builder()
                             .target(LatLng(defaultLat, defaultLng))

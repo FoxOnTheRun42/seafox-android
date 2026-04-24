@@ -186,4 +186,5 @@ dependencies {
     implementation("com.android.billingclient:billing:8.3.0")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }
