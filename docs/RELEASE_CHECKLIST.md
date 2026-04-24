@@ -8,7 +8,7 @@ Ziel: Jeder Store-Kandidat muss reproduzierbar gebaut, pruefbar signiert, rollba
 
 - `./scripts/seafox-product-check.sh --ci --release-r8` muss gruen sein.
 - Lint darf 0 Errors haben; Warnings muessen bekannt oder als technische Schuld akzeptiert sein.
-- JVM-Tests muessen fuer Safety, Privacy, Boot-Autostart, Kartenprovider, Hazard-Depth-Filter, Billing-Katalog, Billing-Restore-Mapping, Entitlements, Feature Access, lokale Crash-Reports und Diagnose-Export/Redaction gruen sein.
+- JVM-Tests muessen fuer Safety, Privacy, Boot-Autostart, Kartenprovider, Hazard-Depth-Filter, Billing-Katalog, Billing-Restore-Coordinator/-Mapping, Entitlements, Feature Access, lokale Crash-Reports und Diagnose-Export/Redaction gruen sein.
 - `adb`-Device-QA muss separat auf mindestens einem Phone und einem Tablet dokumentiert werden.
 
 ## 2. Signing

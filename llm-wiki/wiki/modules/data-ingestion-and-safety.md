@@ -102,9 +102,11 @@ Aus `README.md`:
 - Commercial chart-license placeholders are inactive: `seafox.chart.cmap.external` and `seafox.chart.s63.external` return no app tier and no chart provider license. They must not be marketed as currently sellable or runtime-enabled.
 - `BillingCatalog` normalizes product lookup by trim/lowercase and exposes `activeProducts()`, `tierForProductId()`, `chartPackForProductId()`, `chartProviderForProductId()`, `activeSubscriptionProductIds()` and `activeInAppProductIds()`.
 - `PlayBillingClientGateway` uses Google Play Billing for subscription restore, one-time in-app-product restore and acknowledge paths.
+- `BillingRestoreCoordinator` is the pure client seam between Play Restore and a future backend validator: it creates `BillingValidationRequest`s, treats missing backend decisions as `unverified`, merges verified/rejected decisions back into purchase records and then calls `BillingEntitlementMapper`.
 - `BillingEntitlementMapper` grants tiers only from verified `purchased` records; pending, unverified and rejected purchases do not grant access.
 - `BillingEntitlementMapper` grants first-party chart-pack ownership only from verified `purchased` records; pending, unverified and rejected pack purchases do not grant ownership.
 - Unacknowledged verified purchase tokens are surfaced for acknowledge handling.
+- There is still no real HTTP receipt validator, Play Console setup, purchase UI, trial model, runtime UI gate, entitlement persistence or premium-pack delivery backend.
 
 ## Support Diagnostics Truth
 

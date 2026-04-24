@@ -17,6 +17,8 @@ Ziel: App-Abos duerfen erst nach Servervalidierung als Entitlement gelten. Karte
 
 Der Server prueft das Token gegen die Google Play Developer API fuer Subscriptions/In-App Purchases. Der Client darf `EntitlementSnapshot` nur aus Records mit `verificationStatus = verified` ableiten.
 
+Client-Seam im Code: `BillingRestoreCoordinator` erzeugt aus Play-Restore-Daten `BillingValidationRequest`s, behandelt fehlende Serverantworten als `unverified`, merged Serverentscheidungen zurueck in `BillingPurchaseRecord`s und ruft danach `BillingEntitlementMapper.restoreFromPurchases(...)` auf. Der Coordinator ist absichtlich noch kein Netzwerkclient.
+
 Empfohlene Antwort:
 
 ```json
@@ -33,6 +35,7 @@ Empfohlene Antwort:
 
 - `pending` oder `unverified` gewaehrt keine Features.
 - `rejected` wird geloggt, aber nicht freigeschaltet.
+- Fehlende Serverantwort gilt als `unverified` und schaltet nichts frei.
 - Unacknowledged Tokens werden an den Billing-Gateway-Acknowledge-Pfad gemeldet.
 - App-Abo-Tiers duerfen niemals C-Map/S-63-Kartenlizenzen implizit freischalten.
 - First-party Kartenpakete duerfen nur `ownedChartPackIds` setzen; sie schalten keine App-Stufe und keine externen Kartenprovider frei.

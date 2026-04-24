@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Billing restore validation seam
+
+- Sources: `../app/src/main/java/com/boat/dashboard/data/BillingRestoreCoordinator.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingEntitlementMapper.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/BillingRestoreCoordinatorTest.kt`, `../docs/BILLING_BACKEND_CONTRACT.md`
+- Updated: `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`, `wiki/log.md`
+- Notes: Restore-/Servervalidierungs-Bruecke als reine Domainlogik ergaenzt: Play-Restore-Daten erzeugen `BillingValidationRequest`s, fehlende Serverantworten bleiben `unverified`, verified/rejected Decisions werden vor dem Entitlement-Mapping gemerged. Verified first-party Chart-Pack setzt nur `ownedChartPackIds`; C-Map/S-63 bleiben inaktiv. Kein Netzwerkclient, keine Kauf-UI und keine Runtime-Freischaltung.
+
 ## [2026-04-24] implementation | Crash metadata in support diagnostics
 
 - Sources: `../app/src/main/java/com/boat/dashboard/CrashReporting.kt`, `../app/src/main/java/com/boat/dashboard/data/SupportDiagnostics.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/CrashReportFormatterTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/SupportDiagnosticsBuilderTest.kt`
