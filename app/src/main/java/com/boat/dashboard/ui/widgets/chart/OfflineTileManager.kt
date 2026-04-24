@@ -42,6 +42,10 @@ object OfflineTileManager {
             dir.walkTopDown()
                 .maxDepth(3)
                 .filter { it.isFile && it.extension.equals("mbtiles", ignoreCase = true) }
+                .filter { file ->
+                    runCatching { SeaChartSideLoadPackages.validate(file).isRenderableNow }
+                        .getOrDefault(false)
+                }
                 .forEach { file ->
                     sources.add(
                         OfflineChartSource(
@@ -78,27 +82,35 @@ object OfflineTileManager {
      */
     fun addMbTilesLayer(style: Style, source: OfflineChartSource) {
         if (source.type != OfflineChartType.MBTILES) return
+        val validation = runCatching { SeaChartSideLoadPackages.validate(File(source.path)) }
+            .getOrNull()
+        if (validation?.isRenderableNow != true) {
+            Log.w(TAG, "Skipped non-renderable MBTiles layer: ${source.name}")
+            return
+        }
         if (style.getSource(NAUTICAL_SOURCE_ID) != null) {
             removeLayers(style)
         }
 
         val tileSet = TileSet("tileset", "mbtiles://${source.path}")
-        tileSet.minZoom = 1f
-        tileSet.maxZoom = 18f
+        tileSet.minZoom = validation.minZoom?.toFloat() ?: 1f
+        tileSet.maxZoom = validation.maxZoom?.toFloat() ?: 18f
 
         style.addSource(RasterSource(NAUTICAL_SOURCE_ID, tileSet, 256))
-        style.addLayerBelow(
-            RasterLayer(NAUTICAL_LAYER_ID, NAUTICAL_SOURCE_ID).withProperties(
-                PropertyFactory.rasterOpacity(0.85f),
-            ),
-            "ais-targets-circle" // place below AIS overlay
+        val rasterLayer = RasterLayer(NAUTICAL_LAYER_ID, NAUTICAL_SOURCE_ID).withProperties(
+            PropertyFactory.rasterOpacity(0.85f),
         )
+        if (style.getLayer("ais-targets-circle") != null) {
+            style.addLayerBelow(rasterLayer, "ais-targets-circle")
+        } else {
+            style.addLayer(rasterLayer)
+        }
         Log.d(TAG, "Added MBTiles layer: ${source.name}")
     }
 
     fun removeLayers(style: Style) {
-        style.removeLayer(NAUTICAL_LAYER_ID)
-        style.removeSource(NAUTICAL_SOURCE_ID)
+        runCatching { style.removeLayer(NAUTICAL_LAYER_ID) }
+        runCatching { style.removeSource(NAUTICAL_SOURCE_ID) }
     }
 }
 

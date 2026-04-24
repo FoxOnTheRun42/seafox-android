@@ -30,12 +30,14 @@ import android.content.SharedPreferences
 import android.media.AudioManager
 import android.database.Cursor
 import android.net.Uri
+import android.provider.OpenableColumns
 import java.net.UnknownHostException
 import android.util.Log
 import android.util.Base64
 import java.util.UUID
 import org.json.JSONObject
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -227,6 +229,8 @@ import com.seafox.nmea_dashboard.ui.widgets.chart.GeoBounds
 import com.seafox.nmea_dashboard.ui.widgets.chart.NauticalOverlayOptions
 import com.seafox.nmea_dashboard.ui.widgets.chart.NavigationVectorSettings
 import com.seafox.nmea_dashboard.ui.widgets.chart.Route
+import com.seafox.nmea_dashboard.ui.widgets.chart.SeaChartSideLoadPackages
+import com.seafox.nmea_dashboard.ui.widgets.chart.SeaChartSideLoadValidation
 import com.seafox.nmea_dashboard.ui.widgets.GreyWaterWidget
 import com.seafox.nmea_dashboard.ui.widgets.WaterTankWidget
 import com.seafox.nmea_dashboard.ui.widgets.TemperatureSensor
@@ -1659,6 +1663,8 @@ private const val SEA_CHART_WEB_TILE_ROUTE = "seachart"
 private const val SEA_CHART_DISCOVERY_MAX_DEPTH = 12
 private val SEA_CHART_TILE_FILE_EXTENSIONS = setOf("png", "jpg", "jpeg", "webp")
 private val SEA_CHART_MBTILES_EXTENSIONS = setOf("mbtiles", "mvt")
+private val SEA_CHART_GEOPACKAGE_EXTENSIONS = setOf("gpkg", "geopackage")
+private val SEA_CHART_SIDELOAD_FILE_EXTENSIONS = SeaChartSideLoadPackages.acceptedExtensions()
 private val SEA_CHART_RENDERABLE_FILE_EXTENSIONS = SEA_CHART_TILE_FILE_EXTENSIONS + SEA_CHART_MBTILES_EXTENSIONS
 private val SEA_CHART_OPEN_SEA_CHARTS_RECOGNIZED_EXTENSIONS = setOf(
     "at5",
@@ -1669,11 +1675,15 @@ private val SEA_CHART_OPEN_SEA_CHARTS_RECOGNIZED_EXTENSIONS = setOf(
     "cpg",
     "mbtiles",
     "pbf",
+    "gpkg",
+    "geopackage",
 )
 private val SEA_CHART_C_MAP_RECOGNIZED_EXTENSIONS = setOf(
     "kap",
     "img",
     "mbtiles",
+    "gpkg",
+    "geopackage",
 )
 private val SEA_CHART_NOAA_RECOGNIZED_EXTENSIONS = SEA_CHART_OPEN_SEA_CHARTS_RECOGNIZED_EXTENSIONS
     .plus(setOf("000", "001", "002", "txt"))
@@ -1684,6 +1694,8 @@ private val SEA_CHART_QMAP_DE_RECOGNIZED_EXTENSIONS = setOf(
     "jpg",
     "jpeg",
     "webp",
+    "gpkg",
+    "geopackage",
 )
 private const val NOAA_ENC_CATALOG_URL = "https://charts.noaa.gov/ENCs/ENCs.shtml"
 private const val NOAA_ENC_HOME_URL = "https://nauticalcharts.noaa.gov/charts/noaa-enc.html"
@@ -1869,7 +1881,7 @@ private fun seaChartDownloadCatalogDescription(catalog: SeaChartDownloadCatalog)
             "Die Quelle ist fuer Information, Referenz und Training gedacht und ersetzt keine amtliche Navigation."
     SeaChartDownloadCatalog.OPEN_SEA_CHARTS ->
         "OpenSeaCharts bietet kostenlose MBTiles-Seekarten mit Basiskarte und Seezeichen. " +
-            "Wähle eine Region zum direkten Download. Die Dateien sind sofort offline nutzbar. " +
+            "Wähle eine Region zum direkten Download oder importiere ein lokales MBTiles-Paket. Raster-MBTiles sind offline nutzbar; Vector-MBTiles werden aktuell nur importiert/validiert. " +
             "Hinweis: Tiefen- und Höhenangaben können je nach Region unterschiedlich vollständig sein."
     SeaChartDownloadCatalog.NOAA ->
         "NOAA-ENCs stehen als direkte Paket-Downloads bereit. " +
@@ -1940,6 +1952,8 @@ private val SEA_CHART_FILE_EXTENSIONS = (
         SEA_CHART_OPEN_SEA_CHARTS_RECOGNIZED_EXTENSIONS +
         SEA_CHART_C_MAP_RECOGNIZED_EXTENSIONS +
         SEA_CHART_NOAA_RECOGNIZED_EXTENSIONS +
+        SEA_CHART_QMAP_DE_RECOGNIZED_EXTENSIONS +
+        SEA_CHART_SIDELOAD_FILE_EXTENSIONS +
         setOf("zip")
 ).toList()
 
@@ -2091,6 +2105,12 @@ private data class SeaChartPendingZipInfo(
     val filePath: String,
     val destinationPath: String,
     val sizeBytes: Long,
+)
+private data class SeaChartSideLoadImportResult(
+    val fileName: String,
+    val filePath: String,
+    val sizeBytes: Long,
+    val validation: SeaChartSideLoadValidation,
 )
 
 private data class SeaChartLayerFilterCapabilities(
@@ -3148,6 +3168,121 @@ private fun seaChartDownloadTargetFile(
     return regionFolder.resolve(fileName)
 }
 
+private fun seaChartSideLoadDisplayName(context: Context, uri: Uri): String {
+    val queriedName = runCatching {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (displayNameIndex >= 0 && cursor.moveToFirst()) {
+                cursor.getString(displayNameIndex)
+            } else {
+                null
+            }
+        }
+    }.getOrNull()
+    return queriedName
+        ?.trim()
+        ?.ifBlank { null }
+        ?: uri.lastPathSegment
+            ?.substringAfterLast('/')
+            ?.substringAfterLast(':')
+            ?.trim()
+            ?.ifBlank { null }
+        ?: "seachart.mbtiles"
+}
+
+private fun seaChartSideLoadSizeBytes(context: Context, uri: Uri): Long {
+    val queriedSize = runCatching {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+            if (sizeIndex >= 0 && cursor.moveToFirst() && !cursor.isNull(sizeIndex)) {
+                cursor.getLong(sizeIndex)
+            } else {
+                -1L
+            }
+        } ?: -1L
+    }.getOrDefault(-1L)
+    if (queriedSize > 0L) return queriedSize
+    return runCatching {
+        context.contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
+            descriptor.statSize
+        } ?: -1L
+    }.getOrDefault(-1L)
+}
+
+private fun seaChartNextAvailableSideLoadFile(target: File): File {
+    if (!target.exists()) return target
+    val extension = target.extension
+    val baseName = target.nameWithoutExtension.ifBlank { "seachart" }
+    val parent = target.parentFile ?: return target
+    var suffix = 1
+    while (suffix < 100) {
+        val candidateName = if (extension.isBlank()) {
+            "${baseName}_$suffix"
+        } else {
+            "${baseName}_$suffix.$extension"
+        }
+        val candidate = parent.resolve(candidateName)
+        if (!candidate.exists()) return candidate
+        suffix += 1
+    }
+    return parent.resolve("${baseName}_${System.currentTimeMillis()}.$extension")
+}
+
+private suspend fun importSeaChartSideLoadPackage(
+    context: Context,
+    mapProvider: SeaChartMapProvider,
+    uri: Uri,
+    onProgress: suspend (copiedBytes: Long, totalBytes: Long) -> Unit = { _, _ -> },
+): SeaChartSideLoadImportResult = withContext(Dispatchers.IO) {
+    val displayName = seaChartSideLoadDisplayName(context, uri)
+    if (!SeaChartSideLoadPackages.isAcceptedFileName(displayName)) {
+        throw IOException("Nur MBTiles (.mbtiles) oder GeoPackage (.gpkg) koennen importiert werden.")
+    }
+
+    val totalBytes = seaChartSideLoadSizeBytes(context, uri)
+    val regionFolderName = SeaChartSideLoadPackages.regionFolderName(displayName)
+    val targetFileName = SeaChartSideLoadPackages.targetFileName(displayName)
+    val targetDirectory = seaChartDownloadTargetDirectory(
+        context = context,
+        mapProvider = mapProvider,
+        regionFolderName = regionFolderName,
+    )
+    val targetFile = seaChartNextAvailableSideLoadFile(targetDirectory.resolve(targetFileName))
+    targetFile.parentFile?.mkdirs()
+
+    val buffer = ByteArray(128 * 1024)
+    var copiedBytes = 0L
+    try {
+        context.contentResolver.openInputStream(uri)?.use { rawInput ->
+            BufferedInputStream(rawInput).use { input ->
+                FileOutputStream(targetFile).use { output ->
+                    while (true) {
+                        coroutineContext.ensureActive()
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        output.write(buffer, 0, read)
+                        copiedBytes += read.toLong()
+                        onProgress(copiedBytes, totalBytes)
+                    }
+                    output.flush()
+                }
+            }
+        } ?: throw IOException("Ausgewaehlte Datei konnte nicht geoeffnet werden.")
+
+        val validation = SeaChartSideLoadPackages.validate(targetFile)
+        seaChartInvalidateSeaChartCaches(mapProvider)
+        SeaChartSideLoadImportResult(
+            fileName = targetFile.name,
+            filePath = targetFile.absolutePath,
+            sizeBytes = targetFile.length(),
+            validation = validation,
+        )
+    } catch (error: Exception) {
+        runCatching { if (targetFile.exists()) targetFile.delete() }
+        throw error
+    }
+}
+
 private fun seaChartDescribeDownloadFailureReason(reason: Int): String {
     return when (reason) {
         DownloadManager.ERROR_CANNOT_RESUME -> "Download kann nicht fortgesetzt werden."
@@ -3590,6 +3725,7 @@ private fun seaChartCachedSourceScan(
             .asSequence()
             .mapNotNull { path -> runCatching { File(path) }.getOrNull() }
             .mapNotNull { file ->
+                if (!isSeaChartRenderableFile(file, mapProvider)) return@mapNotNull null
                 seaChartLocalTileTemplateFromSource(file)?.let { template ->
                     file.absolutePath to template
                 }
@@ -3837,19 +3973,32 @@ private fun isSeaChartFile(file: File, mapProvider: SeaChartMapProvider): Boolea
     if (!matchesExtension) return false
     return when (mapProvider) {
         SeaChartMapProvider.OPEN_SEA_CHARTS ->
-            extension in SEA_CHART_OPEN_SEA_CHARTS_RECOGNIZED_EXTENSIONS || name.endsWith(".zip")
+            extension in SEA_CHART_OPEN_SEA_CHARTS_RECOGNIZED_EXTENSIONS ||
+                extension in SEA_CHART_SIDELOAD_FILE_EXTENSIONS ||
+                name.endsWith(".zip")
         SeaChartMapProvider.QMAP_DE ->
-            extension in SEA_CHART_QMAP_DE_RECOGNIZED_EXTENSIONS || name.endsWith(".zip")
+            extension in SEA_CHART_QMAP_DE_RECOGNIZED_EXTENSIONS ||
+                extension in SEA_CHART_SIDELOAD_FILE_EXTENSIONS ||
+                name.endsWith(".zip")
         SeaChartMapProvider.C_MAP ->
-            extension in SEA_CHART_C_MAP_RECOGNIZED_EXTENSIONS || name.endsWith(".zip")
+            extension in SEA_CHART_C_MAP_RECOGNIZED_EXTENSIONS ||
+                extension in SEA_CHART_SIDELOAD_FILE_EXTENSIONS ||
+                name.endsWith(".zip")
         SeaChartMapProvider.NOAA, SeaChartMapProvider.S57, SeaChartMapProvider.S63 ->
-            isNoaaRecognizedFileExtension(extension) || name.endsWith(".zip")
+            isNoaaRecognizedFileExtension(extension) ||
+                extension in SEA_CHART_SIDELOAD_FILE_EXTENSIONS ||
+                name.endsWith(".zip")
     }
 }
 
 private fun isSeaChartRenderableFile(file: File, mapProvider: SeaChartMapProvider): Boolean {
     if (!file.isFile) return false
     val extension = file.extension.lowercase()
+    if (extension == "mbtiles") {
+        return runCatching { SeaChartSideLoadPackages.validate(file).isRenderableNow }
+            .getOrDefault(false)
+    }
+    if (extension in SEA_CHART_GEOPACKAGE_EXTENSIONS) return false
     return when (mapProvider) {
         SeaChartMapProvider.OPEN_SEA_CHARTS,
         SeaChartMapProvider.QMAP_DE,
@@ -3865,6 +4014,10 @@ private fun seaChartSourceCompatibilityNote(file: File, mapProvider: SeaChartMap
     val extension = file.extension.lowercase()
     if (extension.isBlank()) return null
     if (isSeaChartRenderableFile(file, mapProvider)) return null
+    if (extension == "mbtiles" || extension in SEA_CHART_GEOPACKAGE_EXTENSIONS) {
+        return runCatching { SeaChartSideLoadPackages.validate(file).formatNote }
+            .getOrElse { error -> "Kartendatei konnte nicht validiert werden: ${error.message ?: "unbekannter Fehler"}" }
+    }
     if (isSeaChartNativePreviewFile(file, mapProvider)) {
         return when (mapProvider) {
             SeaChartMapProvider.OPEN_SEA_CHARTS ->
@@ -8932,12 +9085,20 @@ private fun DashboardPageLayout(
                             var kartenViewportCenterLon by remember(widget.id) { mutableStateOf<Double?>(null) }
                             var kartenZoomBucket by remember(widget.id) { mutableIntStateOf(10) }
                             val initialKartenSourcePair = remember(widget.id, kartenOfflineReloadRequest, provider) {
+                                // Fast path: grab a renderable local chart first; full resolution happens on IO below.
+                                val cachedSources = seaChartCachedSourceScan(context, provider)
+                                val quickRenderablePath = cachedSources.renderableSourceCandidateEntries.firstOrNull()?.first
+                                if (!quickRenderablePath.isNullOrBlank()) {
+                                    return@remember (
+                                        File(quickRenderablePath).nameWithoutExtension.ifBlank { "${provider.label}-Karte" }
+                                            to quickRenderablePath
+                                        )
+                                }
                                 FreeRasterChartProviders.displayLabelFor(provider)?.let { label ->
                                     return@remember label to null
                                 }
-                                // Fast path: grab first .000 candidate without expensive stat calls.
+                                // ENC fast path: grab first .000 candidate without expensive stat calls.
                                 // Full preferred-path resolution happens in LaunchedEffect on IO thread.
-                                val cachedSources = seaChartCachedSourceScan(context, provider)
                                 val quickPath = cachedSources.sourceCandidatePaths.firstOrNull { path ->
                                     path.endsWith(".000", ignoreCase = true)
                                 }
@@ -8964,9 +9125,6 @@ private fun DashboardPageLayout(
                                 kartenZoomBucket,
                             ) {
                                 val resolved = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                    FreeRasterChartProviders.displayLabelFor(provider)?.let { label ->
-                                        return@withContext label to null
-                                    }
                                     val sourcePath = activeSeaChartSourcePath(
                                         context = context,
                                         mapProvider = provider,
@@ -8978,6 +9136,11 @@ private fun DashboardPageLayout(
                                     )
                                         ?: preferredNoaaEncSourcePath(context, seaChartCachedSourceScan(context, provider).sourceCandidatePaths)
                                         ?: activeKartenSourcePath
+                                    if (sourcePath.isNullOrBlank()) {
+                                        FreeRasterChartProviders.displayLabelFor(provider)?.let { label ->
+                                            return@withContext label to null
+                                        }
+                                    }
                                     val sourceText = activeSeaChartSourceLabel(
                                         context = context,
                                         mapProvider = provider,
@@ -8996,9 +9159,12 @@ private fun DashboardPageLayout(
                                 ownCourseOverGroundDeg = ownCourseOverGroundDeg,
                                 ownSpeedKn = ownSpeedKn,
                                 mapProvider = provider,
-                                activeMapSourceLabel = FreeRasterChartProviders.displayLabelFor(provider)
-                                    ?: activeKartenSourceText,
-                                activeMapSourcePath = if (FreeRasterChartProviders.hasOnlineBaseLayer(provider)) null else activeKartenSourcePath,
+                                activeMapSourceLabel = if (activeKartenSourcePath.isNullOrBlank()) {
+                                    FreeRasterChartProviders.displayLabelFor(provider) ?: activeKartenSourceText
+                                } else {
+                                    activeKartenSourceText
+                                },
+                                activeMapSourcePath = activeKartenSourcePath,
                                 aisTargets = cachedAisTargetsByWidget.values.map { it.target },
                                 showAisOverlay = settings.showAisOverlay,
                                 showOpenSeaMapOverlay = settings.showOpenSeaMapOverlay ||
@@ -11702,6 +11868,137 @@ private fun DashboardPageLayout(
             }
         }
 
+        val startSeaChartSideLoadImport: (Uri, SeaChartMapProvider) -> Unit = sideLoadImport@{ uri, mapProvider ->
+            val displayName = seaChartSideLoadDisplayName(context, uri)
+            if (!SeaChartSideLoadPackages.isAcceptedFileName(displayName)) {
+                val message = "Nur MBTiles (.mbtiles) oder GeoPackage (.gpkg) koennen importiert werden."
+                seaChartDownloadUiState = SeaChartDownloadUiState(
+                    isRunning = false,
+                    downloadedFileName = displayName,
+                    statusText = message,
+                    errorText = message,
+                )
+                seaChartDownloadErrorDialog = SeaChartDownloadErrorState(
+                    message = message,
+                    canRetry = false,
+                    provider = mapProvider,
+                    fileName = displayName,
+                )
+                return@sideLoadImport
+            }
+
+            seaChartDownloadUiState = SeaChartDownloadUiState(
+                isRunning = true,
+                downloadedFileName = displayName,
+                statusText = "Lokaler Import gestartet",
+                totalBytes = seaChartSideLoadSizeBytes(context, uri),
+                completed = false,
+            )
+            seaChartDownloadErrorDialog = null
+            val importJob = seaChartDownloadScope.launch {
+                try {
+                    val result = importSeaChartSideLoadPackage(
+                        context = context,
+                        mapProvider = mapProvider,
+                        uri = uri,
+                        onProgress = { copiedBytes, totalBytes ->
+                            withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                seaChartDownloadUiState = seaChartDownloadUiState.copy(
+                                    isRunning = true,
+                                    downloadedBytes = copiedBytes,
+                                    totalBytes = totalBytes,
+                                    progress = if (totalBytes > 0L) {
+                                        (copiedBytes.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
+                                    } else {
+                                        seaChartDownloadUiState.progress
+                                    },
+                                    downloadedFileName = displayName,
+                                    statusText = if (totalBytes > 0L) {
+                                        "Importiert: ${formatSeaChartMegabytes(copiedBytes)} von ${formatSeaChartMegabytes(totalBytes)}"
+                                    } else {
+                                        "Importiert: ${formatSeaChartMegabytes(copiedBytes)}"
+                                    },
+                                )
+                            }
+                        },
+                    )
+                    seaChartInvalidateSeaChartCaches(mapProvider)
+                    kartenOfflineReloadRequest += 1
+                    seaChartDownloadedRegionsRefresh += 1
+                    val resolvedSource = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        activeSeaChartSourceLabel(context, mapProvider)
+                    }
+                    val resolvedTemplate = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        activeSeaChartTileTemplate(context, mapProvider)
+                    }
+                    page.widgets
+                        .filter { isSeaChartWidgetKind(it.kind) }
+                        .forEach { widget ->
+                            val widgetProvider = seaChartSettingsByWidget[widget.id]?.mapProvider
+                                ?: parseSeaChartWidgetSettings(storedSeaChartWidgetSettings[widget.id]).mapProvider
+                            if (widgetProvider == mapProvider) {
+                                seaChartSourceByWidget[widget.id] = resolvedSource
+                            }
+                        }
+                    seaChartTileTemplateByProvider[mapProvider] = resolvedTemplate
+                    val statusText = buildString {
+                        append("Import abgeschlossen\n")
+                        append(result.validation.formatNote)
+                        append("\nPfad:\n")
+                        append(result.filePath)
+                    }
+                    seaChartDownloadUiState = SeaChartDownloadUiState(
+                        isRunning = false,
+                        progress = 1f,
+                        downloadedBytes = result.sizeBytes,
+                        totalBytes = result.sizeBytes,
+                        statusText = statusText,
+                        downloadedFileName = result.fileName,
+                        completed = result.validation.isRenderableNow,
+                        errorText = null,
+                    )
+                    onShowSeaChartNotice(
+                        "Offlinekarten",
+                        if (result.validation.isRenderableNow) {
+                            "Lokale Karte importiert: ${result.fileName}"
+                        } else {
+                            "Lokale Karte importiert, aber noch nicht renderbar: ${result.fileName}"
+                        },
+                    )
+                } catch (ex: kotlinx.coroutines.CancellationException) {
+                    seaChartDownloadUiState = seaChartDownloadUiState.copy(
+                        isRunning = false,
+                        statusText = "Import abgebrochen",
+                        errorText = "Import wurde abgebrochen.",
+                        completed = false,
+                    )
+                } catch (ex: Exception) {
+                    val message = ex.message ?: "Lokaler Kartenimport fehlgeschlagen."
+                    logSeaChartError(
+                        "seaCHART Sideload-Import fehlgeschlagen: provider=${mapProvider.name}, file=$displayName, message=$message",
+                        ex,
+                    )
+                    seaChartDownloadErrorDialog = SeaChartDownloadErrorState(
+                        message = message,
+                        canRetry = false,
+                        provider = mapProvider,
+                        fileName = displayName,
+                    )
+                    seaChartDownloadUiState = seaChartDownloadUiState.copy(
+                        isRunning = false,
+                        progress = 0f,
+                        downloadedFileName = displayName,
+                        statusText = "Import fehlgeschlagen",
+                        errorText = message,
+                        completed = false,
+                    )
+                } finally {
+                    seaChartDownloadJob = null
+                }
+            }
+            seaChartDownloadJob = importJob
+        }
+
         val seaChartDownloadWidgetId = showSeaChartDownloadDialog
         if (
             seaChartDownloadWidgetId != null &&
@@ -11716,6 +12013,14 @@ private fun DashboardPageLayout(
                 val seaChartDownloadResources = seaChartDownloadCatalogResources(selectedSeaChartDownloadCatalog)
                 val selectedSeaChartDownloadProvider = seaChartDownloadCatalogProvider(selectedSeaChartDownloadCatalog)
                 val hasRegionDownloads = seaChartDownloadRegions.isNotEmpty()
+                val currentSideLoadProvider by rememberUpdatedState(selectedSeaChartDownloadProvider)
+                val seaChartSideLoadLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.OpenDocument(),
+                ) { uri ->
+                    if (uri != null) {
+                        startSeaChartSideLoadImport(uri, currentSideLoadProvider)
+                    }
+                }
                 var selectedSeaChartDownloadRegionIndex by rememberSaveable(page.id, selectedSeaChartDownloadCatalog) {
                     mutableIntStateOf(0)
                 }
@@ -11965,7 +12270,7 @@ private fun DashboardPageLayout(
                                     Text(menuDescription, style = widgetMenuTextStyle)
                                     HorizontalDivider()
                                     if (hasRegionDownloads) {
-                                        Text("AT5 Regionen", style = widgetMenuTextStyle)
+                                        Text("Regionen und Pakete", style = widgetMenuTextStyle)
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -12028,6 +12333,23 @@ private fun DashboardPageLayout(
                                             style = widgetMenuTextStyle,
                                         )
                                     }
+                                    HorizontalDivider()
+                                    Text("Lokales Kartenpaket importieren", style = widgetMenuTextStyle)
+                                    Text(
+                                        "MBTiles werden offline gerendert. GeoPackage wird validiert und gespeichert, aber erst sichtbar, sobald der GeoPackage-Renderer angebunden ist.",
+                                        style = widgetMenuTextStyle.copy(
+                                            color = widgetMenuTextStyle.color.copy(alpha = 0.75f),
+                                        ),
+                                    )
+                                    CompactMenuTextButton(
+                                        text = if (isDownloading) "Import/Download läuft..." else "MBTiles/GeoPackage wählen",
+                                        style = widgetLinkTextStyle,
+                                        fillWidth = false,
+                                        enabled = !isDownloading,
+                                        onClick = {
+                                            seaChartSideLoadLauncher.launch(arrayOf("*/*"))
+                                        },
+                                    )
                                     if (seaChartDownloadUiState.statusText.isNotBlank()) {
                                         HorizontalDivider()
                                         val showUnpackProgress = seaChartDownloadUiState.isUnpacking

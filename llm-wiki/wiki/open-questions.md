@@ -34,7 +34,9 @@ sources:
 
 ## Charts / Navigation
 
-- Welche Kartenquelle wird nach Task 01 als rechtlich saubere Offline-Quelle priorisiert? Aktuelle Entscheidung: MBTiles/GeoPackage Side-Loading ist Task 02; QMAP DE/OpenSeaMap/OSM bleiben Online-Provider ohne Navigationsversprechen.
+- Welche Kartenquelle wird nach Task 02 als naechster Offline-Schritt priorisiert? Aktuelle Entscheidung: Raster-MBTiles-Sideloading ist angebunden; GeoPackage/Vector-MBTiles sind importierbar, aber noch nicht renderbar.
+- Wird GeoPackage zuerst ueber lokalen Tile-Adapter gerendert, beim Import nach MBTiles konvertiert oder bis zur konkreten Provider-Registry verschoben?
+- Welche kleine, rechtlich saubere Raster-MBTiles-Fixture darf fuer Emulator-/Screenshot-Tests im Repo liegen?
 - Wie stark soll S-52-nahe Symbolisierung vor der ersten Beta sein?
 - Welche reale ENC-Zelle dient als Safety-Contour-Referenz?
 - Wann wird die bestehende ChartProvider-Abstraktion voll genutzt statt direkter Verdrahtung?

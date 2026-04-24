@@ -48,6 +48,7 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
+import java.io.File
 import kotlin.math.abs
 
 /**
@@ -105,6 +106,17 @@ fun ChartWidget(
 
     val defaultLat = ownLatitude?.toDouble() ?: 32.78
     val defaultLng = ownLongitude?.toDouble() ?: -79.93
+    val activeOfflineMbTilesSource = remember(activeMapSourcePath) {
+        activeMapSourcePath
+            ?.takeIf { path -> path.endsWith(".mbtiles", ignoreCase = true) }
+            ?.let { path ->
+                OfflineChartSource(
+                    name = File(path).nameWithoutExtension.ifBlank { "MBTiles" },
+                    path = path,
+                    type = OfflineChartType.MBTILES,
+                )
+            }
+    }
 
     if (enableFullscreen && fullscreenOpen) {
         Dialog(
@@ -237,9 +249,13 @@ fun ChartWidget(
         )
     }
 
-    LaunchedEffect(mapProvider, currentStyle) {
+    LaunchedEffect(mapProvider, activeOfflineMbTilesSource, currentStyle) {
         val style = currentStyle ?: return@LaunchedEffect
-        FreeRasterChartProviders.updateBaseLayer(style, mapProvider)
+        if (activeOfflineMbTilesSource != null) {
+            FreeRasterChartProviders.removeBaseLayer(style)
+        } else {
+            FreeRasterChartProviders.updateBaseLayer(style, mapProvider)
+        }
     }
 
     LaunchedEffect(showOpenSeaMapOverlay, mapProvider, currentStyle) {
@@ -250,11 +266,14 @@ fun ChartWidget(
     }
 
     // Load offline MBTiles when available
-    LaunchedEffect(offlineSources, currentStyle) {
+    LaunchedEffect(activeOfflineMbTilesSource, offlineSources, currentStyle) {
         val style = currentStyle ?: return@LaunchedEffect
-        val mbtilesSource = offlineSources.firstOrNull { it.type == OfflineChartType.MBTILES }
+        val mbtilesSource = activeOfflineMbTilesSource
+            ?: offlineSources.firstOrNull { it.type == OfflineChartType.MBTILES }
         if (mbtilesSource != null) {
             OfflineTileManager.addMbTilesLayer(style, mbtilesSource)
+        } else {
+            OfflineTileManager.removeLayers(style)
         }
     }
 
@@ -271,7 +290,12 @@ fun ChartWidget(
 
     LaunchedEffect(activeMapSourcePath, currentStyle, currentZoomBucket, nauticalOverlayOptions, cameraCenter) {
         val style = currentStyle ?: return@LaunchedEffect
-        if (activeMapSourcePath.isNullOrBlank()) {
+        val isOfflineTilePackage = activeMapSourcePath?.let { path ->
+            path.endsWith(".mbtiles", ignoreCase = true) ||
+                path.endsWith(".gpkg", ignoreCase = true) ||
+                path.endsWith(".geopackage", ignoreCase = true)
+        } == true
+        if (activeMapSourcePath.isNullOrBlank() || isOfflineTilePackage) {
             NauticalOverlay.remove(style)
         } else {
             NauticalOverlay.loadFromPath(
@@ -298,7 +322,11 @@ fun ChartWidget(
             currentStyle = style
             configureMapUi(map)
             // Re-apply overlays after style change
-            FreeRasterChartProviders.updateBaseLayer(style, mapProvider)
+            if (activeOfflineMbTilesSource != null) {
+                FreeRasterChartProviders.removeBaseLayer(style)
+            } else {
+                FreeRasterChartProviders.updateBaseLayer(style, mapProvider)
+            }
             if (showAisOverlay) {
                 AisOverlay.setup(style)
                 AisOverlay.update(style, aisTargets)
@@ -306,7 +334,8 @@ fun ChartWidget(
             val seamarkOverlayEnabled = showOpenSeaMapOverlay ||
                 FreeRasterChartProviders.shouldForceSeamarkOverlay(mapProvider)
             OpenSeaMapOverlay.update(style, enabled = seamarkOverlayEnabled)
-            val mbtilesSource = offlineSources.firstOrNull { it.type == OfflineChartType.MBTILES }
+            val mbtilesSource = activeOfflineMbTilesSource
+                ?: offlineSources.firstOrNull { it.type == OfflineChartType.MBTILES }
             if (mbtilesSource != null) {
                 OfflineTileManager.addMbTilesLayer(style, mbtilesSource)
             }
@@ -336,7 +365,11 @@ fun ChartWidget(
                         map.setStyle(initBuilder) { style ->
                             currentStyle = style
                             configureMapUi(map)
-                            FreeRasterChartProviders.updateBaseLayer(style, mapProvider)
+                            if (activeOfflineMbTilesSource != null) {
+                                FreeRasterChartProviders.removeBaseLayer(style)
+                            } else {
+                                FreeRasterChartProviders.updateBaseLayer(style, mapProvider)
+                            }
                             if (showAisOverlay) {
                                 AisOverlay.setup(style)
                             }

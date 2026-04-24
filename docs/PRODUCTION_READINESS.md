@@ -24,6 +24,7 @@ seaFOX ist ein fortgeschrittener Alpha-Prototyp mit ernstzunehmendem Kern:
 - Kartenprovider haben ein Capability-/Availability-Modell, damit C-Map/S-63 nicht als nutzbar erscheinen, solange Lizenz/Implementierung fehlen.
 - Persistierte Kartenprovider-Settings werden auf selektierbare Provider normalisiert; C-Map/S-63 fallen ohne Lizenz-/Implementierungspfad auf eine sichere Quelle zurueck.
 - Freie Online-Provider sind als erster Chart-Roadmap-Schritt angebunden: QMAP DE als Raster-Beta fuer deutsche Gewaesser, OpenSeaMap als Seamark-Overlay und OSM nur als interner Online-Fallback ohne Seekartenversprechen.
+- Lokales Sideloading ist fuer Kartenpakete angebunden: Raster-MBTiles koennen ueber Android-Dateiauswahl importiert und offline gerendert werden; Vector-MBTiles und GeoPackage werden validiert/gespeichert, aber ehrlich als noch nicht renderbar markiert.
 - Erststart-Onboarding, Fullscreen-Chart und Datenschutz-/Bootmodus-Einstellungen sind als Produkt-Shell vorhanden.
 - Entitlement-Domainlogik trennt App-Stufen von Kartenlizenzen, bevor Play Billing angeschlossen wird.
 - Billing-Katalog fuer `Pro`, `Navigator` und `Fleet` ist vorbereitet; C-Map/S-63 sind inaktive externe Platzhalter ohne Rechtefreischaltung.
@@ -75,7 +76,7 @@ Damit wirklich alle Seekarten und die Kurven sauber angezeigt werden koennen, fe
 - Multi-Scale Selection: CATALOG.031/coverage-basiertes Nachladen, Zellpriorisierung nach Position/Zoom und saubere Cache-Invalidierung.
 - Tiefenlogik: Ableitung von Safety Depth, Shallow/Deep Contour, Tiefenflaechenfarben und Alarmzonen aus realen ENC-Objekten.
 - Kurven-Renderer: Linienvereinfachung, Segmentierung, Antimeridian-Handling, Label-Platzierung und Performance-Budget fuer Track, Route, Laylines und Konturlinien.
-- Offline Provider: MBTiles Raster, Vector-Tiles, Tile-Directories und GeoJSON muessen dieselbe Provider-Abstraktion verwenden.
+- Offline Provider: Raster-MBTiles-Sideloading ist angebunden; Vector-MBTiles, GeoPackage-Rendering, Tile-Directories und GeoJSON muessen noch dieselbe Provider-Abstraktion verwenden.
 - Lizenzmodule: S-63/C-Map duerfen erst als bezahltes Produkt erscheinen, wenn Entitlement, Verschluesselung, Zertifikate und Vertragslage geklaert sind.
 - Free Provider: QMAP DE und OpenSeaMap/OSM sind online angebunden, aber nicht offline-fest, nicht amtlich und nicht fuer Navigation. OSM darf nicht per Bulk-Prefetch oder als kommerzielles Seekartenpaket behandelt werden.
 

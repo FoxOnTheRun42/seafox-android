@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Chart Roadmap Task 02 sideload start
+
+- Sources: `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/SeaChartSideLoadPackages.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/OfflineTileManager.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartWidget.kt`, `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/SeaChartSideLoadPackagesTest.kt`
+- Updated: `wiki/modules/chart-system.md`, `wiki/modules/production-and-qa.md`, `wiki/open-questions.md`, `wiki/index.md`, `wiki/log.md`
+- Notes: Task 02 gestartet: lokaler Android-Dateiimport fuer MBTiles/GeoPackage, app-interne Kopie in Provider-Ordner, Raster-MBTiles als renderbar, Vector-MBTiles/GeoPackage validiert aber nicht als renderbar beworben. Gezielter Compile/JVM-Test war gruen; Emulator-/Device-SAF-Flow und echter Render-Screenshot fehlen weiterhin wegen fehlendem `adb`.
+
 ## [2026-04-24] implementation | Chart Roadmap Task 01 free providers
 
 - Sources: `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FreeRasterChartProviders.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartProviderRegistry.kt`, `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/ChartWidget.kt`, `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/THIRD_PARTY_NOTICES.md`

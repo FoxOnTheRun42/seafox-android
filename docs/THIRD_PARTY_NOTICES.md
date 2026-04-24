@@ -23,6 +23,9 @@ legal notice bundle.
   under OpenStreetMap attribution and tile-usage policy. Do not bulk-prefetch
   or market them as a sea-chart package.
 - OpenSeaMap seamark tiles are used as an online seamark overlay.
+- User-sideloaded MBTiles and GeoPackage files keep their own upstream data
+  licenses and attribution requirements. Import support does not grant chart
+  rights or certify the data for navigation.
 - Natural Earth `world_land_110m.geojson` style/source material must retain its
   upstream attribution before store release.
 
