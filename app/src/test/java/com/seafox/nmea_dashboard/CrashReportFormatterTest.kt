@@ -1,9 +1,14 @@
 package com.seafox.nmea_dashboard
 
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class CrashReportFormatterTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
 
     @Test
     fun formatsStableCrashReportFields() {
@@ -53,5 +58,27 @@ class CrashReportFormatterTest {
         assertTrue(text.contains("throwable=unknown"))
         assertTrue(text.contains("message=<none>"))
         assertTrue(text.contains("<no stacktrace>"))
+    }
+
+    @Test
+    fun inventoriesPrivateCrashReportsWithoutReadingStackTraces() {
+        val filesDir = temporaryFolder.newFolder("files")
+        val crashDir = LocalCrashReportStore.directory(filesDir).apply { mkdirs() }
+        crashDir.resolve(LocalCrashReportStore.fileNameFor(100L)).writeText("stack one")
+        crashDir.resolve(LocalCrashReportStore.fileNameFor(250L)).writeText("stack two")
+        crashDir.resolve("notes.txt").writeText("not a crash")
+
+        val inventory = LocalCrashReportStore.inventory(filesDir)
+
+        assertEquals(2, inventory.reportCount)
+        assertEquals(250L, inventory.latestCreatedAtEpochMs)
+    }
+
+    @Test
+    fun emptyCrashInventoryUsesSafeDefaults() {
+        val inventory = LocalCrashReportStore.inventory(temporaryFolder.newFolder("empty-files"))
+
+        assertEquals(0, inventory.reportCount)
+        assertEquals(0L, inventory.latestCreatedAtEpochMs)
     }
 }

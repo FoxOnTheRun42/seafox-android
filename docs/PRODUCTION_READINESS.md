@@ -32,8 +32,8 @@ seaFOX ist ein fortgeschrittener Alpha-Prototyp mit ernstzunehmendem Kern:
 - Ein erstes eigenes seaFOX Premium-Kartenpaket (`seafox.chartpack.de_coast`) ist als aktives Play-`INAPP`-Produkt modelliert. Es erzeugt nur `ownedChartPackIds`, keine App-Stufe und keine externen Kartenprovider-Lizenzen.
 - Feature-Access-Policy ordnet Widgets und Kernfunktionen testbar `Free`, `Pro`, `Navigator` und `Fleet` zu, ohne Kartenlizenzen mit App-Abos zu vermischen.
 - Play Billing Library ist als App-Subscription-Gateway vorbereitet; Restore-Mapping gewaehrt Entitlements erst nach verifiziertem Kaufstatus und markiert unacknowledged Tokens.
-- Support-Diagnoseberichte haben einen user-facing Produktvertrag: JSON wird standardmaessig redigiert, in privatem Cache erzeugt und erst nach Consent-Dialog per FileProvider/Android-Sharesheet geteilt.
-- Lokale Crash-Reports werden als private App-Dateien geschrieben, ohne Cloud-/Telemetry-Upload.
+- Support-Diagnoseberichte haben einen user-facing Produktvertrag: JSON wird standardmaessig redigiert, in privatem Cache erzeugt und erst nach Consent-Dialog per FileProvider/Android-Sharesheet geteilt; Crash-Metadaten enthalten nur Anzahl/letzten Zeitpunkt, keine Stacktraces.
+- Lokale Crash-Reports werden als private App-Dateien geschrieben, ohne Cloud-/Telemetry-Upload; Support-Diagnosen referenzieren sie nur als zaehlbare private Artefakte.
 - Persistenz ueber SharedPreferences und vorhandene App-Versionierung.
 
 Noch nicht produktreif:
@@ -54,7 +54,7 @@ Noch nicht produktreif:
 - UI/UX: Onboarding und Fullscreen-Chart sind vorhanden, aber viele Funktionen liegen weiter in dichten Popups. Fuer Cockpit-Bedienung fehlen noch konsequent grosse Touch-Ziele, klare Statusleisten und validierte Tablet-/Phone-Flows.
 - Release: Release-BuildType, R8/ProGuard-Regeln und optionale Env-Signing-Konfiguration sind vorhanden. Es fehlen Play-Store-Prozess, echte Keystore-Verwaltung, signierter CI-Build, Rollback-Plan und Beta-/Crash-Schiene.
 - Datenschutz: Private Backups und redigierte Diagnoseberichte sind vorbereitet; der neue Support-Share-Flow muss Router-Host, MMSI, Route und MOB standardmaessig aus geteilten Diagnosepaketen entfernen und vor jedem Share Consent einholen. Es fehlen finalisierte Privacy Policy, Loeschkonzept, Device-QA fuer den Share-Flow und Audit der verbleibenden Logging-Pfade.
-- Betrieb: Diagnosebericht-Logik, lokaler FileProvider/cache-Share-Vertrag, lokale Crash-Reports und Boot-Autostart-Policy-Tests sind vorhanden. Backend-Triage ist nicht Teil des aktuellen Support-Flows; es fehlen Device-/Emulator-QA fuer Share/Consent/Redaction und eine Kompatibilitaetsmatrix fuer Tablets/Android-Versionen.
+- Betrieb: Diagnosebericht-Logik, lokaler FileProvider/cache-Share-Vertrag, private Crash-Report-Inventarisierung und Boot-Autostart-Policy-Tests sind vorhanden. Backend-Triage ist nicht Teil des aktuellen Support-Flows; es fehlen Device-/Emulator-QA fuer Share/Consent/Redaction und eine Kompatibilitaetsmatrix fuer Tablets/Android-Versionen.
 
 ## P1 Was gebaut werden muss
 

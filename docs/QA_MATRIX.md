@@ -41,14 +41,14 @@ Diese Matrix ist der Produktvertrag zwischen Entwicklung, Design, QA und Release
 | Performance | 30 Minuten Simulation | Kein Memory Leak, keine dauerhaften Janks | Profiler run |
 | Release | Signed build installieren | Version, Icon, Permissions, Store-Texte korrekt | Release checklist |
 | Release R8 | Minifizierter Release-Build | ProGuard/R8 laeuft ohne fehlende Klassen oder Shrinker-Bruch | `--release-r8` gate |
-| Crash Reporting | Lokaler Crash-Artefakt | Absturz erzeugt privaten, auswertbaren Bericht ohne Cloud-Upload | JVM formatter + device crash drill |
+| Crash Reporting | Lokaler Crash-Artefakt | Absturz erzeugt privaten, auswertbaren Bericht ohne Cloud-Upload; Support-Diagnose teilt nur Count/letzten Zeitpunkt, keine Stacktraces | JVM formatter/inventory + device crash drill |
 
 ## Aktuelle Abdeckung
 
 - Vorhanden: `./scripts/seafox-product-check.sh --ci` fuer statische Projektgesundheit, Compile, JVM-Tests und Lint.
 - Vorhanden: `./scripts/seafox-product-check.sh --ci --release-r8` fuer Release-Minify/R8 ohne signiertes Artefakt.
 - Vorhanden: `./scripts/seafox-device-smoke.sh` fuer nicht-destruktiven adb-Smoke mit optionaler Installation einer vorhandenen APK, App-Start, Screenshot, UI-Dump und Logcat-Capture.
-- Vorhanden: JVM-Tests fuer `GeoCalc`, Boot-Autostart-Policy, Autopilot-Safety-Gate, Backup-Privacy, Chart-Provider-Verfuegbarkeit, Free-Raster-Provider-Vertraege, MBTiles/GeoPackage-Sideload-Dateivertraege, S-57-Renderer-Skeleton/SCAMIN/SOUNDG, oeSENC-Nichtunterstuetzung, Premium-Chart-Pack-Status, persistierte SeaChart-Provider-Normalisierung inklusive JSON-Parsing, Hazard-Depth-Filter, Safety-Contour-Policy, Entitlement-Policy, Feature-Access-Policy, Billing-Katalog, Billing-Restore-Mapping, lokalen Crash-Report-Formatter und Support-Diagnose-Export.
+- Vorhanden: JVM-Tests fuer `GeoCalc`, Boot-Autostart-Policy, Autopilot-Safety-Gate, Backup-Privacy, Chart-Provider-Verfuegbarkeit, Free-Raster-Provider-Vertraege, MBTiles/GeoPackage-Sideload-Dateivertraege, S-57-Renderer-Skeleton/SCAMIN/SOUNDG, oeSENC-Nichtunterstuetzung, Premium-Chart-Pack-Status, persistierte SeaChart-Provider-Normalisierung inklusive JSON-Parsing, Hazard-Depth-Filter, Safety-Contour-Policy, Entitlement-Policy, Feature-Access-Policy, Billing-Katalog, Billing-Restore-Mapping, lokalen Crash-Report-Formatter/Inventory und Support-Diagnose-Export.
 - Dokumentierter Produktvertrag: Der user-facing Support-Diagnose-Share nutzt App-Cache, FileProvider und Android-Sharesheet erst nach Consent; er ist standardmaessig redigiert und bleibt ohne automatischen Upload oder Backend-Triage.
 - Vorhanden: Erststart-Onboarding und Fullscreen-Chart im Compose-Code; noch ohne Emulator-/Device-Nachweis.
 - Hinweis: Das Device-Smoke-Script fuehrt keine Gradle-Tasks aus und loest damit keine Buildnummern-Inkremente aus; eine APK muss bei Bedarf bereits vorhanden sein.

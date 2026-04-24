@@ -20,6 +20,49 @@ data class CrashReportPayload(
     val stackTrace: String,
 )
 
+data class CrashReportInventory(
+    val reportCount: Int,
+    val latestCreatedAtEpochMs: Long,
+)
+
+object LocalCrashReportStore {
+    const val CRASH_REPORT_DIR = "crash-reports"
+
+    fun directory(filesDir: File): File = File(filesDir, CRASH_REPORT_DIR)
+
+    fun fileNameFor(createdAtEpochMs: Long): String {
+        return "seafox-crash-${createdAtEpochMs.coerceAtLeast(0L)}.txt"
+    }
+
+    fun inventory(filesDir: File): CrashReportInventory {
+        val directory = directory(filesDir)
+        val crashFiles = directory
+            .takeIf { it.isDirectory }
+            ?.listFiles { file ->
+                file.isFile &&
+                    file.name.startsWith("seafox-crash-") &&
+                    file.name.endsWith(".txt")
+            }
+            .orEmpty()
+        val latestCreatedAt = crashFiles
+            .mapNotNull { file -> createdAtFromFileName(file.name) }
+            .maxOrNull()
+            ?: 0L
+        return CrashReportInventory(
+            reportCount = crashFiles.size,
+            latestCreatedAtEpochMs = latestCreatedAt,
+        )
+    }
+
+    private fun createdAtFromFileName(fileName: String): Long? {
+        return fileName
+            .removePrefix("seafox-crash-")
+            .removeSuffix(".txt")
+            .toLongOrNull()
+            ?.coerceAtLeast(0L)
+    }
+}
+
 object CrashReportFormatter {
     fun format(payload: CrashReportPayload): String {
         return buildString {
@@ -54,7 +97,7 @@ class LocalCrashReporter(
     }
 
     private fun writeCrashReport(thread: Thread, throwable: Throwable) {
-        val directory = File(context.filesDir, CRASH_REPORT_DIR)
+        val directory = LocalCrashReportStore.directory(context.filesDir)
         if (!directory.exists()) {
             directory.mkdirs()
         }
@@ -71,12 +114,10 @@ class LocalCrashReporter(
             throwableMessage = throwable.message.orEmpty(),
             stackTrace = throwable.stackTraceToString(),
         )
-        File(directory, "seafox-crash-$createdAt.txt").writeText(CrashReportFormatter.format(payload))
+        File(directory, LocalCrashReportStore.fileNameFor(createdAt)).writeText(CrashReportFormatter.format(payload))
     }
 
     companion object {
-        private const val CRASH_REPORT_DIR = "crash-reports"
-
         fun install(context: Context) {
             val current = Thread.getDefaultUncaughtExceptionHandler()
             if (current is LocalCrashReporter) return

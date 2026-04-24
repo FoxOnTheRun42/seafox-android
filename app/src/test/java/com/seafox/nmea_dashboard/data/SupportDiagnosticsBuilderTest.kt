@@ -94,6 +94,8 @@ class SupportDiagnosticsBuilderTest {
             appVersionName = "1.2.3",
             androidSdk = 35,
             createdAtEpochMs = 42L,
+            crashReportCount = 3,
+            latestCrashReportAtEpochMs = 2_000L,
         )
 
         val fields = SupportDiagnosticsJson.toMap(report)
@@ -106,7 +108,10 @@ class SupportDiagnosticsBuilderTest {
         assertEquals("TCP", fields["nmeaRouterProtocol"])
         assertEquals("<redacted>", fields["nmeaRouterHost"])
         assertEquals(65535, fields["udpPort"])
+        assertEquals(3, fields["crashReportCount"])
+        assertEquals(2_000L, fields["latestCrashReportAtEpochMs"])
         assertTrue(json.contains("\"nmeaRouterHost\": \"<redacted>\""))
+        assertTrue(json.contains("\"crashReportCount\": 3"))
     }
 
     @Test

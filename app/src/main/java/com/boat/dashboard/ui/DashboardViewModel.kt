@@ -46,6 +46,7 @@ import android.os.Build
 import android.os.Looper
 import androidx.core.content.ContextCompat
 import com.seafox.nmea_dashboard.BuildConfig
+import com.seafox.nmea_dashboard.LocalCrashReportStore
 import org.json.JSONObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -1351,11 +1352,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun writeSupportDiagnostics(includeSensitive: Boolean = false): File {
+        val crashReports = LocalCrashReportStore.inventory(appContext.filesDir)
         val report = SupportDiagnosticsBuilder.build(
             state = _state.value,
             appVersionName = BuildConfig.VERSION_NAME,
             androidSdk = Build.VERSION.SDK_INT,
             includeSensitive = includeSensitive,
+            crashReportCount = crashReports.reportCount,
+            latestCrashReportAtEpochMs = crashReports.latestCreatedAtEpochMs,
         )
         return SupportDiagnosticsExporter.writeReport(
             directory = SupportDiagnosticsShareContract.cacheDirectory(appContext.cacheDir),

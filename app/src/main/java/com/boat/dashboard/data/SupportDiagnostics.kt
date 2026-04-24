@@ -17,6 +17,8 @@ data class SupportDiagnosticReport(
     val hasActiveRoute: Boolean,
     val hasMobMarker: Boolean,
     val detectedSourceCount: Int,
+    val crashReportCount: Int,
+    val latestCrashReportAtEpochMs: Long,
 )
 
 object SupportDiagnosticsShareContract {
@@ -36,6 +38,8 @@ object SupportDiagnosticsBuilder {
         androidSdk: Int,
         createdAtEpochMs: Long = System.currentTimeMillis(),
         includeSensitive: Boolean = false,
+        crashReportCount: Int = 0,
+        latestCrashReportAtEpochMs: Long = 0L,
     ): SupportDiagnosticReport {
         return SupportDiagnosticReport(
             appVersionName = appVersionName.ifBlank { "unknown" },
@@ -55,6 +59,8 @@ object SupportDiagnosticsBuilder {
             hasActiveRoute = state.activeRoute != null && includeSensitive,
             hasMobMarker = state.mobPosition != null && includeSensitive,
             detectedSourceCount = state.detectedNmeaSources.size,
+            crashReportCount = crashReportCount.coerceAtLeast(0),
+            latestCrashReportAtEpochMs = latestCrashReportAtEpochMs.coerceAtLeast(0L),
         )
     }
 
@@ -81,6 +87,8 @@ object SupportDiagnosticsJson {
             "hasActiveRoute" to report.hasActiveRoute,
             "hasMobMarker" to report.hasMobMarker,
             "detectedSourceCount" to report.detectedSourceCount,
+            "crashReportCount" to report.crashReportCount,
+            "latestCrashReportAtEpochMs" to report.latestCrashReportAtEpochMs,
         )
     }
 

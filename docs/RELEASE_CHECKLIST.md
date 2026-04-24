@@ -59,6 +59,7 @@ Wichtig: `assemble`, `bundle`, `install` und `package` erhoehen die Buildnummer 
 - Support-Diagnose-Share oeffnen: Consent-Dialog pruefen, Share abbrechen und Share fortsetzen.
 - Geteilte Diagnose-JSON ueber `content://`-FileProvider aus App-Cache pruefen; keine `file://`-URI und keine dauerhafte oeffentliche Backup-Datei.
 - Inhalt auf Default-Redaction fuer Router-Host, MMSI, aktive Route und MOB pruefen; sensible Felder duerfen nicht Default fuer oeffentliche Shares sein.
+- Crash-Metadaten im Diagnosebericht pruefen: erlaubt sind Anzahl und letzter Crash-Zeitpunkt; Stacktraces, Exception-Messages und Crash-Dateiinhalte bleiben privat.
 - Kein automatischer Upload und keine Backend-Triage-Zusage in UI/Store-Texten.
 - Lokalen Crash-Report-Ordner nach Testabsturz/Debug-Drill pruefen, ohne Cloud-Upload.
 - Boot-Autostart nur nach bewusstem Opt-in.

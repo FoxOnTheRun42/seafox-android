@@ -90,10 +90,10 @@ Vorhanden in `app/src/test` am 2026-04-24:
 - `BootAutostartPolicyTest`: Boot, Locked-Boot, User-Unlocked und interner Delayed Launch respektieren den gespeicherten Opt-in.
 - `BillingCatalogTest`: eindeutige Produkt-IDs, aktive Pro-/Navigator-/Fleet-App-Subscription-Produkte, aktives first-party Play-`INAPP`-Chart-Pack, case-/whitespace-tolerantes Lookup und inaktive C-MAP/S-63-Chart-Placeholder ohne Tier- oder Lizenzfreigabe.
 - `BillingEntitlementMapperTest`: Restore-Mapping gewaehrt nur verifizierte `purchased` App-Abos und first-party Chart-Packs, blockiert pending/unverified/rejected und sammelt unacknowledged Tokens.
-- `CrashReportFormatterTest`: lokales Crash-Report-Format mit stabilen Feldern und sicheren Defaults.
+- `CrashReportFormatterTest`: lokales Crash-Report-Format mit stabilen Feldern, sicheren Defaults und privater Crash-Inventory-Metadatenlogik fuer Support-Diagnosen.
 - `EntitlementPolicyTest`: Free/Pro/Navigator/Fleet-Featurelogik, getrennte first-party Chart-Pack-Entitlements, getrennte Chart-Provider-Lizenzen und Ablaufdatum.
 - `FeatureAccessPolicyTest`: Widgets und Premiumfunktionen werden Free/Pro/Navigator/Fleet-Features zugeordnet; first-party Chart-Packs schalten keine App-Features frei.
-- `SupportDiagnosticsBuilderTest`: Redaction, optionale sensitive Felder, stabile JSON-Felder, Seiten-/Widget-/Safety-Zusammenfassung und JSON-Datei-Export in ein bereitgestelltes Verzeichnis. Der neue user-facing FileProvider/cache-Share mit Consent ist damit als Produktvertrag dokumentiert, aber noch nicht per Device-QA bewiesen.
+- `SupportDiagnosticsBuilderTest`: Redaction, optionale sensitive Felder, stabile JSON-Felder, Seiten-/Widget-/Safety-Zusammenfassung, crash-report count/latest timestamp und JSON-Datei-Export in ein bereitgestelltes Verzeichnis. Der neue user-facing FileProvider/cache-Share mit Consent ist damit als Produktvertrag dokumentiert, aber noch nicht per Device-QA bewiesen.
 - `ChartProviderRegistryTest`: NOAA/QMAP DE/S-57/OpenSeaCharts als selektierbar oder beta, C-MAP lizenzpflichtig, S-63 nicht implementiert.
 - `FreeRasterChartProvidersTest`: QMAP-DE-Tilevertrag, OpenSeaCharts mit OSM-Fallback plus erzwungenem Seamark-Overlay und kein Free-Raster-Override fuer NOAA.
 - `SeaChartSideLoadPackagesTest`: erlaubte MBTiles/GeoPackage-Dateiendungen sowie stabile Sideload-Datei- und Ordnernamen.

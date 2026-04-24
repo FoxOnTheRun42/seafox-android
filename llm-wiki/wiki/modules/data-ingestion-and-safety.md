@@ -108,10 +108,11 @@ Aus `README.md`:
 
 ## Support Diagnostics Truth
 
-- `SupportDiagnosticsBuilder.build` summarizes app version, Android SDK, creation time, privacy mode, boot autostart, simulation, NMEA protocol/host/port, page count, widget count, active route, MOB marker and detected source count.
+- `SupportDiagnosticsBuilder.build` summarizes app version, Android SDK, creation time, privacy mode, boot autostart, simulation, NMEA protocol/host/port, page count, widget count, redacted active route/MOB marker state, detected source count and safe crash-report inventory metadata.
 - User-facing support diagnostics are a consent-gated share action, not telemetry. The app should create the report only after a visible consent dialog and hand it to the Android Sharesheet through FileProvider.
 - The shared artifact should live in app cache and be exposed as a `content://` URI. It must not depend on a durable public export directory or a `file://` URI.
 - Public/default shares use redaction. Router host, MMSI, route details and MOB data are sensitive and must not be exposed by default; `includeSensitive = true` is not the public-share default.
+- Crash diagnostics in the support JSON are intentionally metadata-only: report count and latest crash timestamp are allowed; stacktraces, throwable messages and crash file contents stay in private app files.
 - There is no automatic upload and no backend triage promise in the current support flow. Any support analysis is manual and starts only after the user deliberately shares the artifact.
 - JSON serialization is stable through `SupportDiagnosticsJson.toMap` and `toJsonString`; tests assert stable fields such as `appVersionName`, `androidSdk`, `createdAtEpochMs`, `backupPrivacyMode`, `nmeaRouterProtocol`, `nmeaRouterHost` and `udpPort`.
 - `SupportDiagnosticsExporter.writeReport` writes `seafox-diagnostics-{createdAt}.json` to a supplied directory and creates that directory when needed.
@@ -122,7 +123,8 @@ Aus `README.md`:
 - `LocalCrashReporter.install` is called from `SeaFoxApplication.onCreate`.
 - Uncaught exceptions are written as private app files under `crash-reports/`.
 - `CrashReportFormatter` records app version, Android SDK, timestamp, thread, throwable class/message and stacktrace.
-- No external crash-reporting SDK or cloud upload is active. A support/share UI for crash reports is still missing.
+- `LocalCrashReportStore.inventory` exposes only count and latest crash timestamp for support diagnostics; it does not read stacktraces into the shared JSON.
+- No external crash-reporting SDK or cloud upload is active. Direct crash-report sharing/backend triage is still missing by design.
 
 ## Boot Autostart Truth
 

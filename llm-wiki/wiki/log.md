@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Crash metadata in support diagnostics
+
+- Sources: `../app/src/main/java/com/boat/dashboard/CrashReporting.kt`, `../app/src/main/java/com/boat/dashboard/data/SupportDiagnostics.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/CrashReportFormatterTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/SupportDiagnosticsBuilderTest.kt`
+- Updated: `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`, `wiki/log.md`
+- Notes: Lokale Crash-Reports bleiben private App-Dateien. Support-Diagnose erhaelt nur sichere Inventory-Metadaten (`crashReportCount`, `latestCrashReportAtEpochMs`), keine Stacktraces, Exception-Messages oder Crash-Dateiinhalte. Gezielte JVM-Tests fuer Crash-Inventory und Support-Diagnose-Felder sind vorgesehen/ausgefuehrt im Implementierungsblock.
+
 ## [2026-04-24] docs | Support diagnostics share flow contract
 
 - Sources: `../docs/PRODUCTION_READINESS.md`, `../docs/QA_MATRIX.md`, `../docs/RELEASE_CHECKLIST.md`, `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`
