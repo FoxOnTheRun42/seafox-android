@@ -37,7 +37,7 @@ Chart Roadmap Task 01 ist umgesetzt: QMAP DE ist als freie Online-Raster-Beta an
 
 Chart Roadmap Task 02 ist teilweise produktiv umgesetzt: Raster-MBTiles koennen per Android-Dateiauswahl sideloaded, validiert, app-intern gespeichert und offline gerendert werden. Vector-MBTiles und GeoPackage werden validiert/gespeichert, aber bewusst als noch nicht renderbar markiert.
 
-Chart Roadmap Task 03 ist als Domain-/Restore-Grundlage gestartet: Ein eigenes seaFOX Premium-Pack `seafox-premium-de-coast` wird ueber das Play-`INAPP`-Produkt `seafox.chartpack.de_coast` modelliert. Verifizierte Kaeufe setzen `ownedChartPackIds`; ohne lokale Paketdatei bleibt der Offline-Paketstatus bewusst `incomplete`. C-Map und S-63 bleiben davon getrennte externe Platzhalter.
+Chart Roadmap Task 03 ist als Domain-/Restore-Grundlage gestartet: Ein eigenes seaFOX Premium-Pack `seafox-premium-de-coast` wird ueber das Play-`INAPP`-Produkt `seafox.chartpack.de_coast` modelliert. Verifizierte Kaeufe setzen `ownedChartPackIds`; ohne lokale Paketdatei bleibt der Offline-Paketstatus bewusst `incomplete`. Die App erkennt definierte lokale MBTiles-Dateinamen fuer das Pack und zeigt im `Abo & Karten`-Dialog klar `Nicht gekauft`, `Gekauft, Paketdatei fehlt`, `Installiert` oder `Lizenz abgelaufen`. C-Map und S-63 bleiben davon getrennte externe Platzhalter.
 
 Chart Roadmap Task 04 ist als Renderer-Skeleton gestartet: `EncRendererSkeleton` beschreibt Format-Capabilities, S-57-Layer-Rollen, SCAMIN-/Zoom-Planung und Safety-Relevanz, waehrend oeSENC explizit `notImplemented` bleibt. `S57CellSelector` kapselt die `.000`-Zellauswahl und ignoriert oeSENC-Artefakte; `S57ChartProvider` ist ein duenner `ChartProvider`-Adapter um den vorhandenen S-57-zu-GeoJSON-Pfad. Das ist ein Beta-/Integrationsvertrag, kein S-52/ECDIS-Renderer.
 
@@ -95,7 +95,7 @@ Die wichtigste Wahrheit fuer Produkt- und Release-Kommunikation: Safety Contour 
 - S-57/S-52: S-57 parsing/rendering and a renderer skeleton exist, but styling is not S-52/ECDIS compliant. Product copy must avoid official-navigation claims.
 - oeSENC: explicitly not implemented. There is no decryption, permit handling, vendor SDK, entitlement or UI path for encrypted oeSENC/S-63-like packages.
 - Offline/format breadth: Raster-MBTiles sideloading exists. Vector MBTiles/PBF, GeoPackage rendering, tile-directory rendering, PMTiles, WMS/WMTS, BSB/KAP, GPX/KML, S-63 and C-Map are not production-ready provider implementations.
-- Premium pack runtime: Billing/entitlement/package-status contracts exist for the first first-party pack, but Play Console setup, purchase UI, backend receipt validation, secure package delivery and UI wiring are still missing.
+- Premium pack runtime: Billing/entitlement/package-status contracts, purchase/restore UI, local MBTiles discovery and user-facing install status exist for the first first-party pack. Still missing: Play Console setup, productive backend receipt validation, secure package delivery/download URL, real package artifact and device QA.
 
 ## Sources / Checks
 

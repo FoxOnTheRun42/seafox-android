@@ -11,6 +11,18 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] docs | Designer Briefs in docs/ eingetragen
+
+- Sources: externe Claude-Chat-Session mit Delta-Briefs, bisher ausserhalb des Repos
+- Updated: `../docs/DESIGNER_BRIEF_CHART_EXTENSION.md`, `../docs/DESIGNER_BRIEF_NMEA_SETUP.md`, `../docs/DESIGNER_BRIEF_CALIBRATION.md`, `../docs/DESIGNER_BRIEFS_INDEX.md`, `wiki/modules/dashboard-and-widgets.md`, `wiki/log.md`
+- Notes: Drei Delta-Briefs zum Master `UI_UX_DESIGNER_BRIEF.md` ins Repo eingetragen. Chart-Extension-Design und NMEA-Setup-Design sind auf externem Designer-Canvas umgesetzt, Compose-Code fehlt noch. Kalibrierungs-Brief ist geschrieben, Design noch nicht begonnen. Neuer Index `DESIGNER_BRIEFS_INDEX.md` erklaert Status und Leihreihenfolge fuer kuenftige Agenten-Sessions. Alle Delta-Briefs folgen bestehenden Tokens und Safety-Regeln; Konflikte werden zurueckgemeldet statt einseitig entschieden.
+
+## [2026-04-24] implementation | Premium pack install status
+
+- Sources: `../app/src/main/java/com/boat/dashboard/ui/widgets/chart/FirstPartyChartPackages.kt`, `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/ui/widgets/chart/FirstPartyChartPackagesTest.kt`
+- Updated: `wiki/modules/chart-system.md`, `wiki/modules/production-and-qa.md`, `wiki/log.md`
+- Notes: First-party Premium-Packs haben canonical MBTiles-Dateinamen und eine lokale Discovery. `Abo & Karten` zeigt Kartenpakete jetzt als `Nicht gekauft`, `Gekauft, Paketdatei fehlt`, `Installiert` oder `Lizenz abgelaufen`. Damit bleibt ein gekauftes, aber nicht ausgeliefertes Pack bewusst nicht als renderbare Karte sichtbar. Echte Download-Auslieferung/Backend-URL bleibt offen.
+
 ## [2026-04-24] implementation | Play Billing purchase flow
 
 - Sources: `../app/src/main/java/com/boat/dashboard/data/PlayBillingClientGateway.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingCatalog.kt`, `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/BillingCatalogTest.kt`

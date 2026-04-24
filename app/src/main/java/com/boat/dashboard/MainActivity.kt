@@ -241,11 +241,15 @@ import com.seafox.nmea_dashboard.ui.widgets.SeaChartSpeedSource
 import com.seafox.nmea_dashboard.ui.widgets.SeaChartWidgetSettings
 import com.seafox.nmea_dashboard.ui.widgets.chart.ChartWidget
 import com.seafox.nmea_dashboard.ui.widgets.chart.ChartProviderRegistry
+import com.seafox.nmea_dashboard.ui.widgets.chart.ChartPackageLicenseStatus
+import com.seafox.nmea_dashboard.ui.widgets.chart.ChartPackageValidationStatus
 import com.seafox.nmea_dashboard.ui.widgets.chart.Catalog031Parser
 import com.seafox.nmea_dashboard.ui.widgets.chart.FreeRasterChartProviders
+import com.seafox.nmea_dashboard.ui.widgets.chart.FirstPartyChartPackages
 import com.seafox.nmea_dashboard.ui.widgets.chart.GeoBounds
 import com.seafox.nmea_dashboard.ui.widgets.chart.NauticalOverlayOptions
 import com.seafox.nmea_dashboard.ui.widgets.chart.NavigationVectorSettings
+import com.seafox.nmea_dashboard.ui.widgets.chart.OfflineChartPackage
 import com.seafox.nmea_dashboard.ui.widgets.chart.Route
 import com.seafox.nmea_dashboard.ui.widgets.chart.SeaChartSideLoadPackages
 import com.seafox.nmea_dashboard.ui.widgets.chart.SeaChartSideLoadValidation
@@ -5249,6 +5253,52 @@ private fun entitlementSummary(snapshot: EntitlementSnapshot): String {
     return "Stufe: ${entitlementTierLabel(snapshot.tier)}\nKartenpakete: $chartPacks\nExterne Kartenlizenzen: $chartProviders\nStatus: $validUntil"
 }
 
+private fun firstPartyChartPackageRoots(context: Context): List<File> {
+    val internalPremiumRoot = File(ensureSeaChartInternalDirectoryStructure(context), "premium")
+    val externalPremiumRoot = context.getExternalFilesDir(null)?.let { root ->
+        File(File(root, SEA_CHART_OFFLINE_CACHE_SUBFOLDER), "premium")
+    }
+    return listOfNotNull(internalPremiumRoot, externalPremiumRoot)
+}
+
+private fun chartPackageStatusText(pkg: OfflineChartPackage): String {
+    return when {
+        pkg.licenseStatus == ChartPackageLicenseStatus.licenseRequired -> {
+            "Nicht gekauft"
+        }
+        pkg.licenseStatus == ChartPackageLicenseStatus.expired -> {
+            "Lizenz abgelaufen"
+        }
+        pkg.validationStatus == ChartPackageValidationStatus.valid -> {
+            "Installiert"
+        }
+        pkg.licenseStatus == ChartPackageLicenseStatus.licensed &&
+            pkg.validationStatus == ChartPackageValidationStatus.incomplete -> {
+            "Gekauft, Paketdatei fehlt"
+        }
+        else -> {
+            "Status unklar"
+        }
+    }
+}
+
+private fun chartPackageDetailText(pkg: OfflineChartPackage): String {
+    return when {
+        pkg.validationStatus == ChartPackageValidationStatus.valid && !pkg.localPath.isNullOrBlank() -> {
+            "Lokale Datei: ${pkg.localPath}"
+        }
+        pkg.licenseStatus == ChartPackageLicenseStatus.licensed -> {
+            "Download-Auslieferung ist noch nicht konfiguriert. Du kannst das Paket erneut ueber Kauf/Restore pruefen, aber seaFOX rendert es erst nach lokaler Paketdatei."
+        }
+        pkg.licenseStatus == ChartPackageLicenseStatus.licenseRequired -> {
+            "Kauf schaltet nur das Kartenpaket frei, keine App-Stufe und keine externen C-Map/S-63-Lizenzen."
+        }
+        else -> {
+            "Dieses Paket ist momentan nicht nutzbar."
+        }
+    }
+}
+
 private fun formatSeaChartRegionLabel(regionName: String): String {
     return regionName
         .replace("_", " ")
@@ -6811,6 +6861,15 @@ private fun DashboardTopBar(
     }
 
     if (showBillingDialog) {
+        val billingContext = LocalContext.current
+        val firstPartyChartPackages = remember(state.entitlementSnapshot) {
+            FirstPartyChartPackages.offlinePackages(
+                entitlementSnapshot = state.entitlementSnapshot,
+                localPathsByPackageId = FirstPartyChartPackages.discoverLocalPaths(
+                    firstPartyChartPackageRoots(billingContext),
+                ),
+            )
+        }
         CompactMenuDialog(
             onDismissRequest = { showBillingDialog = false },
             isDarkMenu = darkBackground,
@@ -6832,6 +6891,20 @@ private fun DashboardTopBar(
                                 "Restore fragt aktive Google-Play-Abos und In-App-Kartenpakete ab. Freischaltung erfolgt nur nach Servervalidierung.",
                                 style = menuTextStyle.copy(color = menuMutedColor),
                             )
+                            if (firstPartyChartPackages.isNotEmpty()) {
+                                HorizontalDivider()
+                                Text("Meine Kartenpakete", style = menuTextStyle)
+                                firstPartyChartPackages.forEach { pkg ->
+                                    Text(
+                                        "${pkg.displayName}: ${chartPackageStatusText(pkg)}",
+                                        style = menuTextStyle,
+                                    )
+                                    Text(
+                                        chartPackageDetailText(pkg),
+                                        style = menuTextStyle.copy(color = menuMutedColor),
+                                    )
+                                }
+                            }
                             HorizontalDivider()
                             Text("Kaufen", style = menuTextStyle)
                             BillingCatalog.activeProducts()

@@ -2,12 +2,17 @@ package com.seafox.nmea_dashboard.ui.widgets.chart
 
 import com.seafox.nmea_dashboard.data.BillingCatalog
 import com.seafox.nmea_dashboard.data.EntitlementSnapshot
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class FirstPartyChartPackagesTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
 
     @Test
     fun premiumPackRequiresLicenseWhenNotOwned() {
@@ -50,6 +55,21 @@ class FirstPartyChartPackagesTest {
         assertEquals(ChartPackageLicenseStatus.licensed, pkg.licenseStatus)
         assertEquals(ChartPackageValidationStatus.valid, pkg.validationStatus)
         assertEquals("/app/seaCHART/premium/de-coast.mbtiles", pkg.localPath)
+    }
+
+    @Test
+    fun discoversInstalledPremiumPackFromCanonicalFileName() {
+        val root = temporaryFolder.newFolder("premium")
+        val installed = File(root, "seafox-premium-de-coast.mbtiles").apply {
+            writeText("not-empty")
+        }
+
+        val paths = FirstPartyChartPackages.discoverLocalPaths(listOf(root))
+
+        assertEquals(
+            installed.absolutePath,
+            paths[BillingCatalog.SEAFOX_PREMIUM_DE_COAST_PACK_ID],
+        )
     }
 
     @Test

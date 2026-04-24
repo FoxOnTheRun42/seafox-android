@@ -3,6 +3,7 @@ package com.seafox.nmea_dashboard.ui.widgets.chart
 import com.seafox.nmea_dashboard.data.BillingCatalog
 import com.seafox.nmea_dashboard.data.EntitlementPolicy
 import com.seafox.nmea_dashboard.data.EntitlementSnapshot
+import java.io.File
 import java.util.Locale
 
 data class FirstPartyChartPackageDescriptor(
@@ -13,6 +14,8 @@ data class FirstPartyChartPackageDescriptor(
     val format: String,
     val description: String,
     val capabilities: Set<ChartProviderCapability>,
+    val fileNames: Set<String>,
+    val downloadUri: String? = null,
 )
 
 object FirstPartyChartPackages {
@@ -29,6 +32,10 @@ object FirstPartyChartPackages {
             capabilities = setOf(
                 ChartProviderCapability.rasterTiles,
                 ChartProviderCapability.offlinePackages,
+            ),
+            fileNames = setOf(
+                "seafox-premium-de-coast.mbtiles",
+                "de-coast.mbtiles",
             ),
         ),
     )
@@ -69,6 +76,7 @@ object FirstPartyChartPackages {
             providerType = ChartProviderType.RASTER_TILES,
             format = descriptor.format,
             localPath = localPath,
+            downloadUri = descriptor.downloadUri,
             description = descriptor.description,
             licenseStatus = licenseStatus,
             expiresAtEpochMs = entitlementSnapshot.validUntilEpochMs,
@@ -90,5 +98,20 @@ object FirstPartyChartPackages {
                 nowEpochMs = nowEpochMs,
             )
         }
+    }
+
+    fun discoverLocalPaths(
+        roots: List<File>,
+    ): Map<String, String> {
+        if (roots.isEmpty()) return emptyMap()
+        return descriptors.mapNotNull { descriptor ->
+            val file = roots
+                .asSequence()
+                .flatMap { root ->
+                    descriptor.fileNames.asSequence().map { fileName -> File(root, fileName) }
+                }
+                .firstOrNull { candidate -> candidate.isFile && candidate.length() > 0L }
+            file?.let { descriptor.id to it.absolutePath }
+        }.toMap()
     }
 }
