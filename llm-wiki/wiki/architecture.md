@@ -87,4 +87,4 @@ Dieses Verzeichnis enthaelt nur die Android-App. Eigenstaendige Nachbarprojekte 
 - Welche kleinen, low-risk Bereiche aus `MainActivity.kt` spaeter extrahiert werden koennen, ohne die aktuelle Productization-Integration zu stoeren.
 - Welche Teile des Kartensystems zuerst hinter konkrete `ChartProvider`-Implementierungen gezogen werden, statt nur Registry-/Availability-Skeleton zu bleiben.
 - Welche Persistenzstrategie langfristig fuer groessere Routen, Tracks, Kartenpakete und Diagnoseartefakte genutzt wird.
-- Wo `EntitlementPolicy` nach Play-Billing-Anbindung wirklich in App-State und UI-Freischaltung greift.
+- Wie der vorhandene `Abo & Karten` Restore-Pfad zum vollstaendigen Kauf-Flow, Trial-Modell und breiter Premium-Action-Gating-Abdeckung ausgebaut wird.

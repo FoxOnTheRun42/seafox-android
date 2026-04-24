@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Billing runtime restore UI
+
+- Sources: `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingRuntimeRestoreApplier.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingValidationHttpClient.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/BillingRuntimeRestoreApplierTest.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/BillingValidationHttpClientTest.kt`, `../docs/BILLING_BACKEND_CONTRACT.md`
+- Updated: `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`, `wiki/log.md`
+- Notes: `Abo & Karten` im Datenmenue zeigt den lokalen Entitlement-Snapshot und startet Play-Restore fuer App-Abos und first-party Kartenpakete. Runtime-Applier schreibt nur vollstaendig validierte Restore-Ergebnisse in den App-State; fehlender `SEAFOX_BILLING_VALIDATION_URL`, missing backend decisions und pending Kaeufe schalten nichts frei und ueberschreiben bestehende Freischaltungen nicht. Kauf-Flow, Play-Console-Produkte, produktiver Backend-Service und Device-QA bleiben offen.
+
 ## [2026-04-24] implementation | Runtime entitlement widget gate
 
 - Sources: `../app/src/main/java/com/boat/dashboard/data/RuntimeEntitlementGate.kt`, `../app/src/main/java/com/boat/dashboard/data/WidgetModels.kt`, `../app/src/main/java/com/boat/dashboard/data/DashboardRepository.kt`, `../app/src/main/java/com/boat/dashboard/ui/DashboardViewModel.kt`, `../app/src/main/java/com/boat/dashboard/MainActivity.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/RuntimeEntitlementGateTest.kt`

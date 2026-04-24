@@ -158,11 +158,17 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.Dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.android.billingclient.api.BillingClient
 import com.seafox.nmea_dashboard.data.DashboardPage
 import com.seafox.nmea_dashboard.data.DashboardWidget
 import com.seafox.nmea_dashboard.data.DashboardState
 import com.seafox.nmea_dashboard.data.BoatProfile
 import com.seafox.nmea_dashboard.data.BoatType
+import com.seafox.nmea_dashboard.data.BillingRestoreCoordinator
+import com.seafox.nmea_dashboard.data.BillingRuntimeRestoreApplier
+import com.seafox.nmea_dashboard.data.BillingValidationDecision
+import com.seafox.nmea_dashboard.data.BillingValidationHttpClient
+import com.seafox.nmea_dashboard.data.EntitlementSnapshot
 import com.seafox.nmea_dashboard.data.NmeaSourceProfile
 import com.seafox.nmea_dashboard.data.NmeaPgnHistoryEntry
 import com.seafox.nmea_dashboard.data.Nmea0183HistoryEntry
@@ -179,7 +185,11 @@ import com.seafox.nmea_dashboard.data.WidgetKind
 import com.seafox.nmea_dashboard.data.SerializedRoute
 import com.seafox.nmea_dashboard.data.SerializedWaypoint
 import com.seafox.nmea_dashboard.data.NmeaRouterProtocol
+import com.seafox.nmea_dashboard.data.SubscriptionTier
 import com.seafox.nmea_dashboard.data.SupportDiagnosticsShareContract
+import com.seafox.nmea_dashboard.data.PlayBillingClientGateway
+import com.seafox.nmea_dashboard.data.PlayBillingPurchaseMapper
+import com.seafox.nmea_dashboard.data.PurchaseVerificationStatus
 import com.seafox.nmea_dashboard.data.autopilotProtocolHint
 import com.seafox.nmea_dashboard.data.autopilotGatewayHint
 import com.seafox.nmea_dashboard.data.widgetHelpLines
@@ -292,6 +302,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import kotlin.coroutines.coroutineContext
 import java.net.URLDecoder
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -493,6 +504,84 @@ class MainActivity : ComponentActivity() {
         runOnUiThread {
             userWarningDialogState.value = title to message
         }
+    }
+
+    private fun restoreBillingEntitlements(
+        scope: CoroutineScope,
+        onStatus: (String) -> Unit,
+    ) {
+        val gateway = PlayBillingClientGateway(this) { _, _ -> }
+        val publishStatus: (String) -> Unit = { message ->
+            runOnUiThread { onStatus(message) }
+        }
+
+        publishStatus("Verbinde mit Google Play ...")
+        gateway.startConnection(
+            onReady = { setupResult ->
+                if (setupResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                    publishStatus("Google Play Billing ist nicht bereit: ${setupResult.debugMessage}")
+                    gateway.endConnection()
+                    return@startConnection
+                }
+
+                gateway.queryActiveEntitlementPurchases { billingResult, purchases ->
+                    if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                        publishStatus("Käufe konnten nicht abgefragt werden: ${billingResult.debugMessage}")
+                        gateway.endConnection()
+                        return@queryActiveEntitlementPurchases
+                    }
+
+                    val purchaseRecords = PlayBillingPurchaseMapper.toPurchaseRecords(purchases)
+                    scope.launch {
+                        val endpoint = BuildConfig.BILLING_VALIDATION_ENDPOINT.trim()
+                        val validationRequests = BillingRestoreCoordinator.validationRequestsFor(purchaseRecords)
+                        val validationDecisions = if (endpoint.isBlank()) {
+                            emptyList()
+                        } else {
+                            withContext(Dispatchers.IO) {
+                                validationRequests.map { request ->
+                                    runCatching {
+                                        BillingValidationHttpClient.validate(
+                                            endpointUrl = endpoint,
+                                            packageName = applicationContext.packageName,
+                                            request = request,
+                                        )
+                                    }.getOrElse {
+                                        BillingValidationDecision(
+                                            purchaseToken = request.purchaseToken,
+                                            verificationStatus = PurchaseVerificationStatus.unverified,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        val coordinatedResult = BillingRestoreCoordinator.restoreWithValidation(
+                            purchases = purchaseRecords,
+                            validationDecisions = validationDecisions,
+                        )
+                        val update = BillingRuntimeRestoreApplier.reduce(
+                            currentSnapshot = viewModel.state.value.entitlementSnapshot,
+                            coordinatedResult = coordinatedResult,
+                            activePurchaseCount = purchaseRecords.size,
+                            backendConfigured = endpoint.isNotBlank(),
+                        )
+                        if (update.applySnapshot) {
+                            viewModel.updateEntitlementSnapshot(update.entitlementSnapshot)
+                        }
+                        update.unacknowledgedPurchaseTokens.forEach { token ->
+                            gateway.acknowledgePurchase(token) { _ -> }
+                        }
+                        publishStatus(update.message)
+                        gateway.endConnection()
+                    }
+                }
+            },
+            onDisconnected = {
+                publishStatus("Google Play Billing wurde getrennt. Bitte später erneut versuchen.")
+                gateway.endConnection()
+            },
+        )
     }
 
     @OptIn(ExperimentalFoundationApi::class)
@@ -887,6 +976,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onFailure = { error -> Result.failure(error) },
                                 )
+                        },
+                        onRestoreBillingEntitlements = { onStatus ->
+                            restoreBillingEntitlements(scope, onStatus)
                         },
                         onUpdateRouterSimulationOrigin = viewModel::updateRouterSimulationOrigin,
                         onClearStoredData = viewModel::clearAllStoredData,
@@ -4980,6 +5072,32 @@ private fun formatSeaChartDownloadTimestamp(millis: Long): String {
     }.getOrDefault("unbekannt")
 }
 
+private fun entitlementTierLabel(tier: SubscriptionTier): String {
+    return when (tier) {
+        SubscriptionTier.FREE -> "Free"
+        SubscriptionTier.PRO -> "Pro"
+        SubscriptionTier.NAVIGATOR -> "Navigator"
+        SubscriptionTier.FLEET -> "Fleet"
+    }
+}
+
+private fun entitlementSummary(snapshot: EntitlementSnapshot): String {
+    val chartPacks = if (snapshot.ownedChartPackIds.isEmpty()) {
+        "keine Kartenpakete"
+    } else {
+        snapshot.ownedChartPackIds.sorted().joinToString(", ")
+    }
+    val chartProviders = if (snapshot.licensedChartProviderIds.isEmpty()) {
+        "keine externen Kartenlizenzen"
+    } else {
+        snapshot.licensedChartProviderIds.sorted().joinToString(", ")
+    }
+    val validUntil = snapshot.validUntilEpochMs?.let { millis ->
+        "gültig bis ${formatSeaChartDownloadTimestamp(millis)}"
+    } ?: "ohne Ablaufdatum im lokalen Snapshot"
+    return "Stufe: ${entitlementTierLabel(snapshot.tier)}\nKartenpakete: $chartPacks\nExterne Kartenlizenzen: $chartProviders\nStatus: $validUntil"
+}
+
 private fun formatSeaChartRegionLabel(regionName: String): String {
     return regionName
         .replace("_", " ")
@@ -5325,6 +5443,7 @@ private fun DashboardTopBar(
     onUpdateBackupPrivacyMode: (BackupPrivacyMode) -> Unit,
     onUpdateBootAutostartEnabled: (Boolean) -> Unit,
     onShareSupportDiagnostics: () -> Result<String>,
+    onRestoreBillingEntitlements: ((String) -> Unit) -> Unit,
     onUpdateRouterSimulationOrigin: (Float, Float) -> Unit,
     onClearStoredData: () -> Unit,
     onRestoreStoredData: () -> Boolean,
@@ -5350,6 +5469,8 @@ private fun DashboardTopBar(
     var showPrivacyDialog by rememberSaveable { mutableStateOf(false) }
     var showSupportDiagnosticsDialog by rememberSaveable { mutableStateOf(false) }
     var supportDiagnosticsStatus by rememberSaveable { mutableStateOf<String?>(null) }
+    var showBillingDialog by rememberSaveable { mutableStateOf(false) }
+    var billingRestoreStatus by rememberSaveable { mutableStateOf<String?>(null) }
     var showWidgetsDialog by rememberSaveable { mutableStateOf(false) }
     var showClearDataDialog by rememberSaveable { mutableStateOf(false) }
     var showRestoreDataDialog by rememberSaveable { mutableStateOf(false) }
@@ -5797,6 +5918,18 @@ private fun DashboardTopBar(
                                 onClick = {
                                     supportDiagnosticsStatus = null
                                     showSupportDiagnosticsDialog = true
+                                    showMenu = false
+                                    menuStage = "main"
+                                },
+                                modifier = compactMenuItemModifier
+                            )
+                            HorizontalDivider()
+                            CompactMenuDropdownItem(
+                                text = "Abo & Karten",
+                                style = menuTextStyle,
+                                onClick = {
+                                    billingRestoreStatus = null
+                                    showBillingDialog = true
                                     showMenu = false
                                     menuStage = "main"
                                 },
@@ -6519,6 +6652,63 @@ private fun DashboardTopBar(
                     onClick = {
                         supportDiagnosticsStatus = null
                         showSupportDiagnosticsDialog = false
+                    }
+                )
+            },
+        )
+    }
+
+    if (showBillingDialog) {
+        CompactMenuDialog(
+            onDismissRequest = { showBillingDialog = false },
+            isDarkMenu = darkBackground,
+            title = { Text("Abo & Karten", style = menuTitleStyle) },
+            text = {
+                CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
+                    ProvideTextStyle(value = menuTextStyle) {
+                        Column(verticalArrangement = Arrangement.spacedBy(MENU_SPACING)) {
+                            Text(
+                                entitlementSummary(state.entitlementSnapshot),
+                                style = menuTextStyle,
+                            )
+                            HorizontalDivider()
+                            Text(
+                                "App-Stufen schalten Dashboard-Funktionen frei. Kartenpakete und externe Kartenlizenzen bleiben getrennt und schalten keine App-Funktionen automatisch frei.",
+                                style = menuTextStyle.copy(color = menuMutedColor),
+                            )
+                            Text(
+                                "Restore fragt aktive Google-Play-Abos und In-App-Kartenpakete ab. Freischaltung erfolgt nur nach Servervalidierung.",
+                                style = menuTextStyle.copy(color = menuMutedColor),
+                            )
+                            billingRestoreStatus?.let { status ->
+                                HorizontalDivider()
+                                Text(status, style = menuTextStyle)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                CompactMenuTextButton(
+                    text = "Play-Käufe wiederherstellen",
+                    style = menuTextStyle,
+                    fillWidth = false,
+                    onClick = {
+                        billingRestoreStatus = "Starte Wiederherstellung ..."
+                        onRestoreBillingEntitlements { status ->
+                            billingRestoreStatus = status
+                        }
+                    }
+                )
+            },
+            dismissButton = {
+                CompactMenuTextButton(
+                    text = "Schließen",
+                    style = menuTextStyle,
+                    fillWidth = false,
+                    onClick = {
+                        billingRestoreStatus = null
+                        showBillingDialog = false
                     }
                 )
             },
@@ -15980,6 +16170,7 @@ fun TopBarPreview() {
             onUpdateBackupPrivacyMode = {},
             onUpdateBootAutostartEnabled = {},
             onShareSupportDiagnostics = { Result.success("preview-diagnostics.json") },
+            onRestoreBillingEntitlements = { onStatus -> onStatus("Preview: keine Play-Verbindung.") },
             onUpdateRouterSimulationOrigin = { _, _ -> },
             onClearStoredData = {},
             onRestoreStoredData = { false },

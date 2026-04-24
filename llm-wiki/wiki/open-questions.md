@@ -48,7 +48,7 @@ sources:
 - Welche Teile von `MainActivity.kt` werden zuerst extrahiert, um Aenderungsrisiko zu senken?
 - Soll groessere Persistenz fuer Tracks, Routen und Kartenpakete ueber Room/SQLite erfolgen?
 - Welche UI-State-Grenzen braucht ein robuster Fullscreen-Chart-Modus?
-- Wo greifen `EntitlementPolicy`, `BillingCatalog` und `FirstPartyChartPackages` nach Play-Billing-Anbindung in App-State, UI-Freischaltung und Premium-Pack-Auslieferung?
+- Wie wird der vorhandene `Abo & Karten` Restore-Pfad zu Kauf-Flow, Trial, produktivem Backend-Validator und Premium-Pack-Auslieferung erweitert?
 - Welche konkrete Klasse wird erster echter `ChartProvider` statt Registry-/Skeleton-Arbeit?
 
 ## Business / Licensing

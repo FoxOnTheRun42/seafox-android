@@ -19,7 +19,7 @@ Client-Mapping im Code: `PlayBillingPurchaseMapper` uebersetzt echte Play-`Purch
 
 Der Server prueft das Token gegen die Google Play Developer API fuer Subscriptions/In-App Purchases. Der Client darf `EntitlementSnapshot` nur aus Records mit `verificationStatus = verified` ableiten.
 
-Client-Seam im Code: `BillingValidationJson` parst Backend-Antworten nur zu Token-Entscheidungen (`verified`, `rejected`, sonst `unverified`) plus optionalem Ablaufzeitpunkt. `BillingRestoreCoordinator` erzeugt aus Play-Restore-Daten `BillingValidationRequest`s, behandelt fehlende Serverantworten als `unverified`, merged Serverentscheidungen zurueck in `BillingPurchaseRecord`s und ruft danach `BillingEntitlementMapper.restoreFromPurchases(...)` auf. Der Coordinator ist absichtlich noch kein Netzwerkclient.
+Client-Seam im Code: `BillingValidationJson` parst Backend-Antworten nur zu Token-Entscheidungen (`verified`, `rejected`, sonst `unverified`) plus optionalem Ablaufzeitpunkt. `BillingRestoreCoordinator` erzeugt aus Play-Restore-Daten `BillingValidationRequest`s, behandelt fehlende Serverantworten als `unverified`, merged Serverentscheidungen zurueck in `BillingPurchaseRecord`s und ruft danach `BillingEntitlementMapper.restoreFromPurchases(...)` auf. `BillingValidationHttpClient` kann diese Requests per POST an `SEAFOX_BILLING_VALIDATION_URL` senden. `BillingRuntimeRestoreApplier` schreibt Restore-Ergebnisse nur dann in den App-State, wenn keine Backend-Validation fehlt; pending oder unverified Kaeufe ueberschreiben bestehende Freischaltungen nicht.
 
 Empfohlene Antwort:
 
@@ -38,6 +38,9 @@ Empfohlene Antwort:
 - `pending` oder `unverified` gewaehrt keine Features.
 - `rejected` wird geloggt, aber nicht freigeschaltet.
 - Fehlende Serverantwort gilt als `unverified` und schaltet nichts frei.
+- Ein fehlender `SEAFOX_BILLING_VALIDATION_URL`-Endpoint schaltet trotz Play-Kauf nichts frei.
+- Pending-Kaeufe duerfen einen bestehenden lokalen Snapshot nicht downgraden.
+- Ein erfolgreicher Restore ohne aktive Kaeufe darf den lokalen Snapshot auf `Free` zuruecksetzen.
 - Unbekannte Server-Statuswerte gelten als `unverified`.
 - Unacknowledged Tokens werden an den Billing-Gateway-Acknowledge-Pfad gemeldet.
 - App-Abo-Tiers duerfen niemals C-Map/S-63-Kartenlizenzen implizit freischalten.

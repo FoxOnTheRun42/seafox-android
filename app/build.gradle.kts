@@ -64,6 +64,9 @@ val appBuildKeywords: String by lazy {
     appVersionProperties.getProperty("app.build.keywords", "").trim()
 }
 
+val billingValidationEndpoint: String =
+    providers.environmentVariable("SEAFOX_BILLING_VALIDATION_URL").orNull.orEmpty()
+
 val appVersionCode: Int by lazy {
     val parts = parseAppVersion(appVersionName)
     (parts[0] * 1_000_000) +
@@ -101,6 +104,7 @@ android {
         buildConfigField("String", "APP_RELEASE_TITLE", "\"${escapeBuildConfigString(appReleaseTitle)}\"")
         buildConfigField("String", "APP_RELEASE_SNAPSHOT", "\"${escapeBuildConfigString(appReleaseSnapshot)}\"")
         buildConfigField("String", "APP_BUILD_KEYWORDS", "\"${escapeBuildConfigString(appBuildKeywords)}\"")
+        buildConfigField("String", "BILLING_VALIDATION_ENDPOINT", "\"${escapeBuildConfigString(billingValidationEndpoint)}\"")
     }
 
     buildFeatures {
