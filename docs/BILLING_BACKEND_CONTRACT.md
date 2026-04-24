@@ -13,6 +13,8 @@ Ziel: App-Abos duerfen erst nach Servervalidierung als Entitlement gelten. Karte
 - `acknowledged`: Client-Status aus Play Billing
 - Produktarten: App-Stufen laufen als Play `SUBS`; first-party Kartenpakete wie `seafox.chartpack.de_coast` laufen als Play `INAPP`.
 
+Client-Mapping im Code: `PlayBillingPurchaseMapper` uebersetzt echte Play-`Purchase`-Objekte in `BillingPurchaseRecord`s und setzt sie standardmaessig auf `verificationStatus = unverified`. Eine Backend-Entscheidung muss danach explizit ueber den Restore-Coordinator kommen.
+
 ## Server-Verifikation
 
 Der Server prueft das Token gegen die Google Play Developer API fuer Subscriptions/In-App Purchases. Der Client darf `EntitlementSnapshot` nur aus Records mit `verificationStatus = verified` ableiten.

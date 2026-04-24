@@ -11,6 +11,12 @@ sources:
 
 Chronologisches Protokoll fuer Ingests, Queries, Lint-Passes und groessere Wiki-Pflege. Eintraege sind append-only.
 
+## [2026-04-24] implementation | Play Billing purchase mapper
+
+- Sources: `../app/src/main/java/com/boat/dashboard/data/PlayBillingPurchaseMapper.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/PlayBillingPurchaseMapperTest.kt`, `../docs/BILLING_BACKEND_CONTRACT.md`
+- Updated: `wiki/modules/data-ingestion-and-safety.md`, `wiki/modules/production-and-qa.md`, `wiki/log.md`
+- Notes: Echte Google-Play-`Purchase`-Objekte werden jetzt in interne `BillingPurchaseRecord`s uebersetzt und starten standardmaessig als `unverified`. Pending/acknowledged/Product-ID-Normalisierung sind JVM-getestet. Backend-Validation bleibt noetig, bevor Entitlements freigeschaltet werden.
+
 ## [2026-04-24] implementation | Billing restore validation seam
 
 - Sources: `../app/src/main/java/com/boat/dashboard/data/BillingRestoreCoordinator.kt`, `../app/src/main/java/com/boat/dashboard/data/BillingEntitlementMapper.kt`, `../app/src/test/java/com/seafox/nmea_dashboard/data/BillingRestoreCoordinatorTest.kt`, `../docs/BILLING_BACKEND_CONTRACT.md`
