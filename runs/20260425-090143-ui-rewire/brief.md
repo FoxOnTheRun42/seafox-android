@@ -57,9 +57,18 @@ Chart Source Transparency:
 - Permanente Attribution und Safety-Hinweis, weil MapLibre-Attribution deaktiviert ist.
 - C-Map/S-63 bleiben nicht renderbar und nicht als Kaufversprechen formuliert.
 
+## Build Slice 03
+
+Menu Primitive Extraction:
+
+- `CompactMenuDialog`, `CompactMenuTextButton` und `CompactMenuDropdownItem` aus `MainActivity.kt` geloest.
+- `ScrollableMenuTextContent` bleibt privat in `ui/CompactMenu.kt`.
+- Keine Dialog-State-Maschinen, keine Billing-/Support-/Chart-Logik verschoben.
+- Ziel: kleinerer MainActivity-Monolith und sicherere spaetere UI-Neuverkabelung.
+
 ## Next Slices
 
-1. Menu/dialog extraction: CompactMenu primitives aus `MainActivity.kt` loesen.
-2. NMEA source management: gespeicherte Quellen, Diagnose-Fusion, spaeter Scan/Test.
-3. Chart settings v2: Kartenquelle, Overlays, Import/Shop/gespeicherte Karten.
-4. Calibration flow erst nach NMEA-Status/Diagnose.
+1. NMEA source management: gespeicherte Quellen, Diagnose-Fusion, spaeter Scan/Test.
+2. Chart settings v2: Kartenquelle, Overlays, Import/Shop/gespeicherte Karten.
+3. Calibration flow erst nach NMEA-Status/Diagnose.
+4. Optional: `OptionSelectorRow` und Menu-TextField-Styles separat extrahieren.
