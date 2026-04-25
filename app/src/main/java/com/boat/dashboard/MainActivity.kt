@@ -178,6 +178,7 @@ import com.seafox.nmea_dashboard.data.RuntimeEntitlementGate
 import com.seafox.nmea_dashboard.data.NmeaSourceProfile
 import com.seafox.nmea_dashboard.data.NmeaPgnHistoryEntry
 import com.seafox.nmea_dashboard.data.Nmea0183HistoryEntry
+import com.seafox.nmea_dashboard.data.NmeaConnectionStatus
 import com.seafox.nmea_dashboard.data.AutopilotControlMode
 import com.seafox.nmea_dashboard.data.AutopilotDispatchRequest
 import com.seafox.nmea_dashboard.data.AutopilotTargetDevice
@@ -196,6 +197,8 @@ import com.seafox.nmea_dashboard.data.SupportDiagnosticsShareContract
 import com.seafox.nmea_dashboard.data.PlayBillingClientGateway
 import com.seafox.nmea_dashboard.data.PlayBillingPurchaseMapper
 import com.seafox.nmea_dashboard.data.PurchaseVerificationStatus
+import com.seafox.nmea_dashboard.data.NmeaStatusSummarizer
+import com.seafox.nmea_dashboard.data.NmeaStatusSummary
 import com.seafox.nmea_dashboard.data.autopilotProtocolHint
 import com.seafox.nmea_dashboard.data.autopilotGatewayHint
 import com.seafox.nmea_dashboard.data.widgetHelpLines
@@ -1510,6 +1513,64 @@ private fun backupPrivacyModeDescription(mode: BackupPrivacyMode): String {
         BackupPrivacyMode.privateOnly -> "Backups bleiben im privaten App-Speicher."
         BackupPrivacyMode.manualExport -> "Öffentliche Exporte nur nach manueller Nutzeraktion."
         BackupPrivacyMode.cloudAllowed -> "Cloud-/System-Backup ist erlaubt, nur mit bewusstem Opt-in."
+    }
+}
+
+@Composable
+private fun NmeaStatusChip(
+    summary: NmeaStatusSummary,
+    darkBackground: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val statusColor = when (summary.status) {
+        NmeaConnectionStatus.DEMO -> SeaFoxDesignTokens.Color.cyan
+        NmeaConnectionStatus.LIVE -> SeaFoxDesignTokens.Color.emerald
+        NmeaConnectionStatus.STALE -> SeaFoxDesignTokens.Color.brass
+        NmeaConnectionStatus.DISCONNECTED -> if (darkBackground) {
+            SeaFoxDesignTokens.Color.mutedDark
+        } else {
+            SeaFoxDesignTokens.Color.mutedLight
+        }
+    }
+    val backgroundColor = if (darkBackground) {
+        SeaFoxDesignTokens.Color.surfaceRaisedDark.copy(alpha = 0.72f)
+    } else {
+        SeaFoxDesignTokens.Color.surfaceRaisedLight.copy(alpha = 0.92f)
+    }
+    val textColor = if (darkBackground) Color(0xFFEAF7FF) else SeaFoxDesignTokens.Color.ink
+    Row(
+        modifier = modifier
+            .heightIn(min = 32.dp)
+            .defaultMinSize(minWidth = 116.dp)
+            .border(
+                width = 1.dp,
+                color = statusColor.copy(alpha = 0.48f),
+                shape = RoundedCornerShape(6.dp),
+            )
+            .background(backgroundColor, RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(7.dp)
+                .background(statusColor, CircleShape),
+        )
+        Text(
+            text = summary.label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 11.sp,
+                lineHeight = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor,
+            ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = textColor,
+        )
     }
 }
 
@@ -5726,6 +5787,7 @@ private fun DashboardTopBar(
     var showDetectedSourcesDialog by rememberSaveable { mutableStateOf(false) }
     var showUsedPgnsDialog by rememberSaveable { mutableStateOf(false) }
     var showAdapterProgrammingDialog by rememberSaveable { mutableStateOf(false) }
+    var showNmeaConnectionOverviewDialog by rememberSaveable { mutableStateOf(false) }
     var showPrivacyDialog by rememberSaveable { mutableStateOf(false) }
     var showSupportDiagnosticsDialog by rememberSaveable { mutableStateOf(false) }
     var supportDiagnosticsStatus by rememberSaveable { mutableStateOf<String?>(null) }
@@ -5813,6 +5875,17 @@ private fun DashboardTopBar(
         .heightIn(min = compactMenuItemHeight)
     val selectedPageIndex = state.selectedPage.coerceIn(0, state.pages.lastIndex.coerceAtLeast(0))
     val selectedPageTitle = state.pages.getOrNull(selectedPageIndex)?.name ?: "Keine Seite"
+    var nmeaStatusNowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(state.simulationEnabled, state.detectedNmeaSources) {
+        while (true) {
+            nmeaStatusNowMs = System.currentTimeMillis()
+            delay(1_000L)
+        }
+    }
+    val nmeaStatusSummary = NmeaStatusSummarizer.summarize(
+        state = state,
+        nowEpochMs = nmeaStatusNowMs,
+    )
     val supportDiagnosticsDecision = RuntimeEntitlementGate.canUseFeature(
         snapshot = state.entitlementSnapshot,
         feature = MonetizedFeature.supportDiagnostics,
@@ -5890,6 +5963,12 @@ private fun DashboardTopBar(
                     .padding(end = SeaFoxDesignTokens.Size.menuSectionSpacing)
             )
         }
+
+        NmeaStatusChip(
+            summary = nmeaStatusSummary,
+            darkBackground = darkBackground,
+            onClick = { showNmeaConnectionOverviewDialog = true },
+        )
 
         CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
             DropdownMenu(
@@ -6266,6 +6345,103 @@ private fun DashboardTopBar(
                         onClick = { showPageSelectionDialog = false },
                     )
                 }
+            },
+        )
+    }
+
+    if (showNmeaConnectionOverviewDialog) {
+        val recentSources = state.detectedNmeaSources
+            .sortedByDescending { it.lastSeenMs }
+            .take(5)
+        CompactMenuDialog(
+            onDismissRequest = { showNmeaConnectionOverviewDialog = false },
+            isDarkMenu = darkBackground,
+            title = { Text("NMEA-Datenquelle", style = menuTitleStyle) },
+            text = {
+                CompositionLocalProvider(LocalMinimumTouchTargetEnforcement provides false) {
+                    ProvideTextStyle(value = menuTextStyle) {
+                        Column(verticalArrangement = Arrangement.spacedBy(MENU_SPACING)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(nmeaStatusSummary.label, style = menuTextStyle, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = state.nmeaRouterProtocol.name,
+                                    style = menuTextStyle.copy(color = menuMutedColor),
+                                )
+                            }
+                            Text(nmeaStatusSummary.detail, style = menuTextStyle.copy(color = menuMutedColor))
+                            Text(
+                                text = if (state.nmeaRouterProtocol == NmeaRouterProtocol.TCP) {
+                                    "${state.nmeaRouterHost.ifBlank { DEFAULT_NMEA_ROUTER_HOST }}:${state.udpPort}"
+                                } else {
+                                    "UDP Listener Port ${state.udpPort}"
+                                },
+                                style = menuTextStyle.copy(color = menuMutedColor),
+                            )
+                            HorizontalDivider()
+                            Text("Zuletzt erkannte Quellen", style = menuTextStyle, fontWeight = FontWeight.SemiBold)
+                            if (recentSources.isEmpty()) {
+                                Text(
+                                    "Noch keine PGNs oder NMEA0183-Saetze erkannt. Pruefe Router, Port, WLAN oder starte den Demo-Modus.",
+                                    style = menuTextStyle.copy(color = menuMutedColor),
+                                )
+                            } else {
+                                recentSources.forEach { source ->
+                                    val sourceName = source.displayName.ifBlank { source.sourceKey }
+                                    val pgnText = source.pgns
+                                        .distinct()
+                                        .sorted()
+                                        .take(4)
+                                        .joinToString(", ") { sourcePgnLine(it) }
+                                        .ifBlank { "PGNs unbekannt" }
+                                    Text(sourceName, style = menuTextStyle)
+                                    Text(
+                                        pgnText,
+                                        style = menuTextStyle.copy(color = menuMutedColor),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                            HorizontalDivider()
+                            CompactMenuTextButton(
+                                text = "Diagnose oeffnen",
+                                style = menuTextStyle,
+                                fillWidth = false,
+                                onClick = {
+                                    showNmeaConnectionOverviewDialog = false
+                                    showUsedPgnsDialog = true
+                                },
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                CompactMenuTextButton(
+                    text = "Quelle wechseln",
+                    style = menuTextStyle,
+                    fillWidth = false,
+                    onClick = {
+                        routerHost = state.nmeaRouterHost.ifBlank { DEFAULT_NMEA_ROUTER_HOST }
+                        routerPortText = state.udpPort.toString()
+                        selectedRouterMode = if (state.simulationEnabled) "simulation" else "live"
+                        selectedRouterProtocol = state.nmeaRouterProtocol
+                        showNmeaConnectionOverviewDialog = false
+                        showRouterDialog = true
+                    },
+                )
+            },
+            dismissButton = {
+                CompactMenuTextButton(
+                    text = "Schliessen",
+                    style = menuTextStyle,
+                    fillWidth = false,
+                    onClick = { showNmeaConnectionOverviewDialog = false },
+                )
             },
         )
     }

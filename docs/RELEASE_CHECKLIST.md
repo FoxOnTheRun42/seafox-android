@@ -52,6 +52,7 @@ Wichtig: `assemble`, `bundle`, `install` und `package` erhoehen die Buildnummer 
 - Offline ohne Netzwerk.
 - GPS aus/an und Berechtigungen verweigern/erteilen.
 - Simulator ein/aus.
+- NMEA-Status-Chip in der Top-Bar pruefen: Demo, Live-Daten, stockende Daten und getrennte Quelle; Tap oeffnet die Datenquellen-Uebersicht.
 - MOB ausloesen und loeschen.
 - Fullscreen-Chart oeffnen/schliessen.
 - Kartenquelle wechseln.
