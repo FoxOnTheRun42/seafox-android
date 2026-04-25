@@ -4,6 +4,7 @@ import android.widget.FrameLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -71,6 +74,7 @@ fun ChartWidget(
     mapProvider: SeaChartMapProvider = SeaChartMapProvider.NOAA,
     activeMapSourceLabel: String?,
     activeMapSourcePath: String?,
+    chartSourceUiState: ChartSourceUiState? = null,
     aisTargets: List<AisTargetData> = emptyList(),
     showAisOverlay: Boolean = true,
     showOpenSeaMapOverlay: Boolean = false,
@@ -137,6 +141,7 @@ fun ChartWidget(
                     mapProvider = mapProvider,
                     activeMapSourceLabel = activeMapSourceLabel,
                     activeMapSourcePath = activeMapSourcePath,
+                    chartSourceUiState = chartSourceUiState,
                     aisTargets = aisTargets,
                     showAisOverlay = showAisOverlay,
                     showOpenSeaMapOverlay = showOpenSeaMapOverlay,
@@ -494,17 +499,118 @@ fun ChartWidget(
             }
         }
 
-        // Chart source label
-        if (activeMapSourceLabel != null) {
-            Text(
-                text = activeMapSourceLabel,
-                color = Color(0x99FFFFFF),
-                fontSize = 10.sp,
+        val sourceUiState = chartSourceUiState ?: activeMapSourceLabel?.let { label ->
+            legacyChartSourceUiState(label)
+        }
+        if (sourceUiState != null) {
+            ChartSourcePill(
+                state = sourceUiState,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(8.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun ChartSourcePill(
+    state: ChartSourceUiState,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .widthIn(max = 330.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xD6081320))
+            .border(
+                1.dp,
+                chartSourceBorderColor(state),
+                RoundedCornerShape(12.dp),
+            )
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            state.badges.take(4).forEach { badge ->
+                ChartSourceBadgeView(badge)
+            }
+        }
+        Text(
+            text = state.primaryLabel,
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = "${state.statusLabel}: ${state.detailLabel}",
+            color = Color(0xCCEAF7FF),
+            fontSize = 10.sp,
+        )
+        state.attributionLabel?.takeIf { it.isNotBlank() }?.let { attribution ->
+            Text(
+                text = attribution,
+                color = Color(0x99FFFFFF),
+                fontSize = 9.sp,
+            )
+        }
+        Text(
+            text = state.navigationNotice,
+            color = if (state.isRenderable) Color(0xB8FFFFFF) else SeaFoxDesignTokens.Color.brass,
+            fontSize = 9.sp,
+        )
+    }
+}
+
+@Composable
+private fun ChartSourceBadgeView(badge: ChartSourceBadge) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(chartSourceBadgeColor(badge.tone))
+            .border(
+                1.dp,
+                Color.White.copy(alpha = 0.14f),
+                RoundedCornerShape(999.dp),
+            )
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = badge.label,
+            color = Color.White,
+            fontSize = 8.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+private fun legacyChartSourceUiState(label: String): ChartSourceUiState {
+    return ChartSourceUiState(
+        primaryLabel = label,
+        statusLabel = "Quelle",
+        detailLabel = "Aktiv",
+        badges = listOf(ChartSourceBadge("KARTE", ChartSourceBadgeTone.neutral)),
+        attributionLabel = null,
+        navigationNotice = "Darstellung ist nicht ECDIS-zertifiziert.",
+        isRenderable = true,
+    )
+}
+
+private fun chartSourceBorderColor(state: ChartSourceUiState): Color {
+    return if (state.isRenderable) {
+        SeaFoxDesignTokens.Color.cyan.copy(alpha = 0.42f)
+    } else {
+        SeaFoxDesignTokens.Color.brass.copy(alpha = 0.62f)
+    }
+}
+
+private fun chartSourceBadgeColor(tone: ChartSourceBadgeTone): Color {
+    return when (tone) {
+        ChartSourceBadgeTone.neutral -> SeaFoxDesignTokens.Color.surfaceRaisedDark.copy(alpha = 0.88f)
+        ChartSourceBadgeTone.info -> SeaFoxDesignTokens.Color.cyan.copy(alpha = 0.62f)
+        ChartSourceBadgeTone.success -> SeaFoxDesignTokens.Color.emerald.copy(alpha = 0.66f)
+        ChartSourceBadgeTone.warning -> SeaFoxDesignTokens.Color.brass.copy(alpha = 0.72f)
+        ChartSourceBadgeTone.danger -> SeaFoxDesignTokens.Color.coral.copy(alpha = 0.78f)
     }
 }
 

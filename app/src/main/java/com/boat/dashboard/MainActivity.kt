@@ -248,6 +248,7 @@ import com.seafox.nmea_dashboard.ui.widgets.chart.ChartWidget
 import com.seafox.nmea_dashboard.ui.widgets.chart.ChartProviderRegistry
 import com.seafox.nmea_dashboard.ui.widgets.chart.ChartPackageLicenseStatus
 import com.seafox.nmea_dashboard.ui.widgets.chart.ChartPackageValidationStatus
+import com.seafox.nmea_dashboard.ui.widgets.chart.ChartSourceUiModels
 import com.seafox.nmea_dashboard.ui.widgets.chart.Catalog031Parser
 import com.seafox.nmea_dashboard.ui.widgets.chart.FreeRasterChartProviders
 import com.seafox.nmea_dashboard.ui.widgets.chart.FirstPartyChartPackages
@@ -9964,6 +9965,18 @@ private fun DashboardPageLayout(
                             var activeKartenSourcePath by rememberSaveable(widget.id, kartenOfflineReloadRequest, provider.name) {
                                 mutableStateOf(initialKartenSourcePair.second)
                             }
+                            val firstPartyChartPackagesForWidget = remember(
+                                entitlementSnapshot,
+                                kartenOfflineReloadRequest,
+                                activeKartenSourcePath,
+                            ) {
+                                FirstPartyChartPackages.offlinePackages(
+                                    entitlementSnapshot = entitlementSnapshot,
+                                    localPathsByPackageId = FirstPartyChartPackages.discoverLocalPaths(
+                                        firstPartyChartPackageRoots(context),
+                                    ),
+                                )
+                            }
 
                             LaunchedEffect(
                                 widget.id,
@@ -10002,6 +10015,26 @@ private fun DashboardPageLayout(
                                 activeKartenSourceText = resolved.first.ifBlank { "Keine ${provider.label}-Karte erkannt" }
                                 activeKartenSourcePath = resolved.second
                             }
+                            val chartSourceUiState = remember(
+                                provider,
+                                activeKartenSourceText,
+                                activeKartenSourcePath,
+                                settings.showOpenSeaMapOverlay,
+                                firstPartyChartPackagesForWidget,
+                            ) {
+                                ChartSourceUiModels.build(
+                                    mapProvider = provider,
+                                    activeMapSourceLabel = if (activeKartenSourcePath.isNullOrBlank()) {
+                                        FreeRasterChartProviders.displayLabelFor(provider) ?: activeKartenSourceText
+                                    } else {
+                                        activeKartenSourceText
+                                    },
+                                    activeMapSourcePath = activeKartenSourcePath,
+                                    showOpenSeaMapOverlay = settings.showOpenSeaMapOverlay ||
+                                        FreeRasterChartProviders.shouldForceSeamarkOverlay(provider),
+                                    offlinePackages = firstPartyChartPackagesForWidget,
+                                )
+                            }
 
                             ChartWidget(
                                 ownLatitude = ownLatitude,
@@ -10016,6 +10049,7 @@ private fun DashboardPageLayout(
                                     activeKartenSourceText
                                 },
                                 activeMapSourcePath = activeKartenSourcePath,
+                                chartSourceUiState = chartSourceUiState,
                                 aisTargets = cachedAisTargetsByWidget.values.map { it.target },
                                 showAisOverlay = settings.showAisOverlay,
                                 showOpenSeaMapOverlay = settings.showOpenSeaMapOverlay ||

@@ -35,6 +35,7 @@ seaFOX ist ein fortgeschrittener Alpha-Prototyp mit ernstzunehmendem Kern:
 - Support-Diagnoseberichte haben einen user-facing Produktvertrag: JSON wird standardmaessig redigiert, in privatem Cache erzeugt und erst nach Consent-Dialog per FileProvider/Android-Sharesheet geteilt; Crash-Metadaten enthalten nur Anzahl/letzten Zeitpunkt, keine Stacktraces.
 - Lokale Crash-Reports werden als private App-Dateien geschrieben, ohne Cloud-/Telemetry-Upload; Support-Diagnosen referenzieren sie nur als zaehlbare private Artefakte.
 - NMEA-Verbindung ist als Cockpit-Zustand in der Top-Bar sichtbar: Demo, Live, stockende Daten und getrennte Datenquelle werden ueber einen Status-Chip angezeigt; Tap oeffnet eine kompakte Datenquellen-Uebersicht mit Router- und PGN-Diagnosepfaden.
+- Kartenquelle und Attribution sind im Chart dauerhaft als Source-Truth-Pille sichtbar: QMAP/OSM/OpenSeaMap, lokale MBTiles/GeoPackage-Imports, ENC-Dateiquellen, Premium-Pack-Status und nicht nutzbare C-Map/S-63-Zustaende werden getrennt und ohne ueberzogene Lizenzversprechen angezeigt.
 - Persistenz ueber SharedPreferences und vorhandene App-Versionierung.
 
 Noch nicht produktreif:
@@ -54,6 +55,7 @@ Noch nicht produktreif:
 - Safety Contour: Safety-Depth-Berechnung und DEPARE/DEPCNT/SOUNDG-Filter sind vorhanden und mit Fixtures getestet. Es fehlen noch ein vollstaendiger gerenderter Contour-/Warnpfad aus realen ENC-Zellen und Fixture-Screenshots.
 - UI/UX: Onboarding und Fullscreen-Chart sind vorhanden, aber viele Funktionen liegen weiter in dichten Popups. Fuer Cockpit-Bedienung fehlen noch konsequent grosse Touch-Ziele, klare Statusleisten und validierte Tablet-/Phone-Flows.
 - NMEA Setup: Status-Chip und Uebersicht sind angebunden, aber voller Quellen-Manager, Netzwerk-Scan, Test-Session, USB/Serial und echte Connection-Lifecycle-Fehler fehlen noch.
+- Chart Source UX: Permanente Source-Pille und Tests sind vorhanden; es fehlen noch ein eigener Chart-Source-Bottom-Sheet, visuelle Screenshot-Tests und Device-QA fuer Attribution/Lesbarkeit im Fullscreen.
 - Release: Release-BuildType, R8/ProGuard-Regeln und optionale Env-Signing-Konfiguration sind vorhanden. Es fehlen Play-Store-Prozess, echte Keystore-Verwaltung, signierter CI-Build, Rollback-Plan und Beta-/Crash-Schiene.
 - Datenschutz: Private Backups und redigierte Diagnoseberichte sind vorbereitet; der neue Support-Share-Flow muss Router-Host, MMSI, Route und MOB standardmaessig aus geteilten Diagnosepaketen entfernen und vor jedem Share Consent einholen. Es fehlen finalisierte Privacy Policy, Loeschkonzept, Device-QA fuer den Share-Flow und Audit der verbleibenden Logging-Pfade.
 - Betrieb: Diagnosebericht-Logik, lokaler FileProvider/cache-Share-Vertrag, private Crash-Report-Inventarisierung und Boot-Autostart-Policy-Tests sind vorhanden. Backend-Triage ist nicht Teil des aktuellen Support-Flows; es fehlen Device-/Emulator-QA fuer Share/Consent/Redaction und eine Kompatibilitaetsmatrix fuer Tablets/Android-Versionen.

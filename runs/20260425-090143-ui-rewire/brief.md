@@ -47,10 +47,19 @@ NMEA Top-Bar Status:
 - Tap oeffnet kompakte NMEA-Datenquellen-Uebersicht.
 - Uebersicht reused bestehende Router-Konfiguration und PGN-Diagnose.
 
+## Build Slice 02
+
+Chart Source Transparency:
+
+- `ChartSourceUiModels` als testbare Domain-/UI-Modellschicht.
+- Source-Truth-Pille im Chart und Fullscreen.
+- Badges fuer frei/online/import/offline/premium/lizenz/nicht fertig.
+- Permanente Attribution und Safety-Hinweis, weil MapLibre-Attribution deaktiviert ist.
+- C-Map/S-63 bleiben nicht renderbar und nicht als Kaufversprechen formuliert.
+
 ## Next Slices
 
-1. Chart source transparency: Provider-Badges und permanente Attribution-Pille.
-2. Menu/dialog extraction: CompactMenu primitives aus `MainActivity.kt` loesen.
-3. NMEA source management: gespeicherte Quellen, Diagnose-Fusion, spaeter Scan/Test.
-4. Chart settings v2: Kartenquelle, Overlays, Import/Shop/gespeicherte Karten.
-5. Calibration flow erst nach NMEA-Status/Diagnose.
+1. Menu/dialog extraction: CompactMenu primitives aus `MainActivity.kt` loesen.
+2. NMEA source management: gespeicherte Quellen, Diagnose-Fusion, spaeter Scan/Test.
+3. Chart settings v2: Kartenquelle, Overlays, Import/Shop/gespeicherte Karten.
+4. Calibration flow erst nach NMEA-Status/Diagnose.
